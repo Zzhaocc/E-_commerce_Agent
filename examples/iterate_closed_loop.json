@@ -1,0 +1,238 @@
+{
+  "ad_rows": [
+    {
+      "campaign": "Shopping - Patinete 500W",
+      "impressions": 90000,
+      "clicks": 1200,
+      "orders": 5,
+      "spend": 3400,
+      "revenue": 13170
+    },
+    {
+      "campaign": "Search - patinete elétrico",
+      "impressions": 85000,
+      "clicks": 1100,
+      "orders": 3,
+      "spend": 3100,
+      "revenue": 7902
+    },
+    {
+      "campaign": "Broad - automático",
+      "impressions": 45000,
+      "clicks": 560,
+      "orders": 1,
+      "spend": 1500,
+      "revenue": 2634
+    }
+  ],
+  "reviews": [
+    {
+      "rating": 5,
+      "text": "Chegou antes do prazo e muito bem embalado. Subiu a ladeira da minha rua sem esforço.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-04",
+      "helpful": 12
+    },
+    {
+      "rating": 5,
+      "text": "Motor forte de verdade, ando 12 km por dia e ainda sobra bateria.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-06",
+      "helpful": 9
+    },
+    {
+      "rating": 4,
+      "text": "Produto bom, montagem simples. Só achei o manual muito curto.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-08",
+      "helpful": 4
+    },
+    {
+      "rating": 2,
+      "text": "A bateria não dura os 35 km do anúncio. No máximo 22 km com meu peso.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-09",
+      "helpful": 21
+    },
+    {
+      "rating": 2,
+      "text": "Veio um risco na carenagem, a embalagem estava amassada.",
+      "variant": "500W 8Ah",
+      "date": "2026-01-10",
+      "helpful": 7
+    },
+    {
+      "rating": 1,
+      "text": "O pneu furou na primeira semana de uso.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-11",
+      "helpful": 16
+    },
+    {
+      "rating": 2,
+      "text": "É menor do que parece nas fotos, não é como na imagem.",
+      "variant": "500W 8Ah",
+      "date": "2026-01-12",
+      "helpful": 11
+    },
+    {
+      "rating": 3,
+      "text": "A montagem é ok, mas o manual não explica como regular o freio.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-13",
+      "helpful": 6
+    },
+    {
+      "rating": 3,
+      "text": "A potência é boa, mas para quem tem 100 kg não sobe igual ao vídeo.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-14",
+      "helpful": 18
+    },
+    {
+      "rating": 3,
+      "text": "Entrega atrasou 6 dias, mas o produto é bom.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-15",
+      "helpful": 2
+    },
+    {
+      "rating": 2,
+      "text": "Achei caro pelo que oferece, o acabamento deixa a desejar.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-16",
+      "helpful": 5
+    },
+    {
+      "rating": 5,
+      "text": "Freio a disco funciona muito bem, me senti seguro na descida.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-17",
+      "helpful": 8
+    },
+    {
+      "rating": 4,
+      "text": "Dobra fácil e cabe no porta-malas do carro, exatamente o que eu queria.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-18",
+      "helpful": 10
+    },
+    {
+      "rating": 2,
+      "text": "A caixa chegou violada e faltava uma chave.",
+      "variant": "500W 8Ah",
+      "date": "2026-01-19",
+      "helpful": 13
+    },
+    {
+      "rating": 5,
+      "text": "Atendimento respondeu rápido quando perguntei sobre a garantia.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-20",
+      "helpful": 3
+    },
+    {
+      "rating": 2,
+      "text": "Autonomia bem menor que o anúncio, esperava mais por esse preço.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-21",
+      "helpful": 19
+    },
+    {
+      "rating": 3,
+      "text": "Não entendi como calibrar o pneu, faltou instrução no manual.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-22",
+      "helpful": 4
+    },
+    {
+      "rating": 4,
+      "text": "Uso todo dia para ir ao trabalho, economia boa comparado ao ônibus.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-23",
+      "helpful": 7
+    },
+    {
+      "rating": 1,
+      "text": "O motor começou a fazer barulho depois de 3 semanas.",
+      "variant": "500W 8Ah",
+      "date": "2026-01-24",
+      "helpful": 22
+    },
+    {
+      "rating": 5,
+      "text": "Suspensão boa, passa no calçamento sem judiar da coluna.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-25",
+      "helpful": 9
+    },
+    {
+      "rating": 2,
+      "text": "A foto mostra um bagageiro que não vem no produto.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-26",
+      "helpful": 15
+    },
+    {
+      "rating": 3,
+      "text": "Bom custo-benefício, mas a embalagem podia ser melhor.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-27",
+      "helpful": 3
+    },
+    {
+      "rating": 4,
+      "text": "Bateria carrega em 4 horas como descrito, sem esquentar.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-28",
+      "helpful": 6
+    },
+    {
+      "rating": 2,
+      "text": "Demorou 12 dias para chegar, e ainda veio com a caixa aberta.",
+      "variant": "500W 8Ah",
+      "date": "2026-01-29",
+      "helpful": 8
+    },
+    {
+      "rating": 5,
+      "text": "Melhor compra do ano, subo a ladeira com 90 kg sem descer.",
+      "variant": "500W 12Ah",
+      "date": "2026-01-30",
+      "helpful": 14
+    },
+    {
+      "rating": 2,
+      "text": "O selim é duro e o anúncio não fala isso.",
+      "variant": "500W 12Ah",
+      "date": "2026-02-01",
+      "helpful": 5
+    }
+  ],
+  "ad_rows_after": [
+    {
+      "campaign": "Shopping - Patinete 500W",
+      "impressions": 96000,
+      "clicks": 1730,
+      "orders": 9,
+      "spend": 3600,
+      "revenue": 23706
+    },
+    {
+      "campaign": "Search - patinete elétrico",
+      "impressions": 92000,
+      "clicks": 1650,
+      "orders": 8,
+      "spend": 3300,
+      "revenue": 21072
+    },
+    {
+      "campaign": "Broad - automático",
+      "impressions": 52000,
+      "clicks": 940,
+      "orders": 5,
+      "spend": 1500,
+      "revenue": 13170
+    }
+  ]
+}

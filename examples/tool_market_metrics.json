@@ -1,0 +1,67 @@
+{
+  "args": {
+    "rows": [
+      {
+        "price": 2399,
+        "monthly_sales": 320,
+        "rating": 4.6,
+        "reviews": 412,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2399,
+        "monthly_sales": 210,
+        "rating": 4.4,
+        "reviews": 268,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2399,
+        "monthly_sales": 90,
+        "rating": 4.1,
+        "reviews": 96,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2420,
+        "monthly_sales": 150,
+        "rating": 4.5,
+        "reviews": 180,
+        "config": {
+          "motor": "350W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2450,
+        "monthly_sales": 85,
+        "rating": 4.2,
+        "reviews": 74,
+        "config": {
+          "motor": "500W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2599,
+        "monthly_sales": 70,
+        "rating": 4.7,
+        "reviews": 52,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      }
+    ],
+    "currency": "BRL"
+  }
+}

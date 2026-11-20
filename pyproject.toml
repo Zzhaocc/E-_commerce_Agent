@@ -1,0 +1,11 @@
+[project]
+name = "crossborderops-agent-platform"
+version = "0.6.0"
+description = "跨境电商 AI 运营 Agent 平台：7 个 SOP Agent + 确定性工具 + 契约护栏 + 闭环回流"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

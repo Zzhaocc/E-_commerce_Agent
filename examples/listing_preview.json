@@ -1,0 +1,473 @@
+{
+  "brief": {
+    "product": "Patinete Elétrico 500W Adulto",
+    "category": "Patinetes Elétricos",
+    "currency": "BRL",
+    "economics": {
+      "cogs": 1250.0,
+      "freight": 120.0,
+      "ad_rate": 0.12,
+      "coupon_budget": 0.05,
+      "target_margin": 0.15
+    },
+    "facts": {
+      "Motor": "500W (pico 800W)",
+      "Bateria": "48V 12Ah",
+      "Autonomia": "35 km (modo médio)",
+      "Velocidade máxima": "30 km/h",
+      "Peso do produto": "18,5 kg",
+      "Carga máxima": "90 kg",
+      "Pneu": "8,5 polegadas tubeless"
+    },
+    "keywords": [
+      "patinete elétrico",
+      "patinete elétrico adulto",
+      "patinete 500w",
+      "patinete dobrável",
+      "scooter elétrico",
+      "patinete elétrico 48v",
+      "patinete para adulto 90kg",
+      "patinete elétrico potente",
+      "patinete com suspensão",
+      "patinete elétrico usado",
+      "peças de patinete"
+    ],
+    "config_options": [
+      "motor:500W / bateria:12Ah",
+      "motor:500W / bateria:8Ah",
+      "motor:350W / bateria:12Ah"
+    ],
+    "target_duration": 24,
+    "ad_window_days": 7,
+    "competitor_rows": [
+      {
+        "price": 2399,
+        "monthly_sales": 320,
+        "rating": 4.6,
+        "reviews": 412,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2399,
+        "monthly_sales": 210,
+        "rating": 4.4,
+        "reviews": 268,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2399,
+        "monthly_sales": 90,
+        "rating": 4.1,
+        "reviews": 96,
+        "config": {
+          "motor": "350W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2420,
+        "monthly_sales": 150,
+        "rating": 4.5,
+        "reviews": 180,
+        "config": {
+          "motor": "350W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2450,
+        "monthly_sales": 85,
+        "rating": 4.2,
+        "reviews": 74,
+        "config": {
+          "motor": "500W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2599,
+        "monthly_sales": 70,
+        "rating": 4.7,
+        "reviews": 52,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2649,
+        "monthly_sales": 60,
+        "rating": 4.3,
+        "reviews": 41,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2699,
+        "monthly_sales": 280,
+        "rating": 4.6,
+        "reviews": 356,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2699,
+        "monthly_sales": 190,
+        "rating": 4.4,
+        "reviews": 231,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2720,
+        "monthly_sales": 120,
+        "rating": 4.2,
+        "reviews": 143,
+        "config": {
+          "motor": "500W",
+          "bateria": "12Ah"
+        }
+      },
+      {
+        "price": 2750,
+        "monthly_sales": 70,
+        "rating": 4.0,
+        "reviews": 88,
+        "config": {
+          "motor": "500W",
+          "bateria": "8Ah"
+        }
+      },
+      {
+        "price": 2899,
+        "monthly_sales": 160,
+        "rating": 4.8,
+        "reviews": 204,
+        "config": {
+          "motor": "500W",
+          "bateria": "15Ah"
+        }
+      },
+      {
+        "price": 2899,
+        "monthly_sales": 110,
+        "rating": 4.5,
+        "reviews": 132,
+        "config": {
+          "motor": "500W",
+          "bateria": "15Ah"
+        }
+      },
+      {
+        "price": 2950,
+        "monthly_sales": 80,
+        "rating": 4.3,
+        "reviews": 91,
+        "config": {
+          "motor": "500W",
+          "bateria": "15Ah"
+        }
+      },
+      {
+        "price": 2999,
+        "monthly_sales": 50,
+        "rating": 4.1,
+        "reviews": 63,
+        "config": {
+          "motor": "800W",
+          "bateria": "15Ah"
+        }
+      },
+      {
+        "price": 3199,
+        "monthly_sales": 90,
+        "rating": 4.7,
+        "reviews": 118,
+        "config": {
+          "motor": "800W",
+          "bateria": "20Ah"
+        }
+      },
+      {
+        "price": 3199,
+        "monthly_sales": 40,
+        "rating": 4.4,
+        "reviews": 47,
+        "config": {
+          "motor": "800W",
+          "bateria": "20Ah"
+        }
+      },
+      {
+        "price": 3299,
+        "monthly_sales": 25,
+        "rating": 4.2,
+        "reviews": 31,
+        "config": {
+          "motor": "800W",
+          "bateria": "20Ah"
+        }
+      }
+    ],
+    "ad_rows": [
+      {
+        "campaign": "Shopping - Patinete 500W",
+        "impressions": 90000,
+        "clicks": 1200,
+        "orders": 5,
+        "spend": 3400,
+        "revenue": 13170
+      },
+      {
+        "campaign": "Search - patinete elétrico",
+        "impressions": 85000,
+        "clicks": 1100,
+        "orders": 3,
+        "spend": 3100,
+        "revenue": 7902
+      },
+      {
+        "campaign": "Broad - automático",
+        "impressions": 45000,
+        "clicks": 560,
+        "orders": 1,
+        "spend": 1500,
+        "revenue": 2634
+      }
+    ],
+    "ad_rows_after": [
+      {
+        "campaign": "Shopping - Patinete 500W",
+        "impressions": 96000,
+        "clicks": 1730,
+        "orders": 9,
+        "spend": 3600,
+        "revenue": 23706
+      },
+      {
+        "campaign": "Search - patinete elétrico",
+        "impressions": 92000,
+        "clicks": 1650,
+        "orders": 8,
+        "spend": 3300,
+        "revenue": 21072
+      },
+      {
+        "campaign": "Broad - automático",
+        "impressions": 52000,
+        "clicks": 940,
+        "orders": 5,
+        "spend": 1500,
+        "revenue": 13170
+      }
+    ],
+    "reviews": [
+      {
+        "rating": 5,
+        "text": "Chegou antes do prazo e muito bem embalado. Subiu a ladeira da minha rua sem esforço.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-04",
+        "helpful": 12
+      },
+      {
+        "rating": 5,
+        "text": "Motor forte de verdade, ando 12 km por dia e ainda sobra bateria.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-06",
+        "helpful": 9
+      },
+      {
+        "rating": 4,
+        "text": "Produto bom, montagem simples. Só achei o manual muito curto.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-08",
+        "helpful": 4
+      },
+      {
+        "rating": 2,
+        "text": "A bateria não dura os 35 km do anúncio. No máximo 22 km com meu peso.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-09",
+        "helpful": 21
+      },
+      {
+        "rating": 2,
+        "text": "Veio um risco na carenagem, a embalagem estava amassada.",
+        "variant": "500W 8Ah",
+        "date": "2026-01-10",
+        "helpful": 7
+      },
+      {
+        "rating": 1,
+        "text": "O pneu furou na primeira semana de uso.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-11",
+        "helpful": 16
+      },
+      {
+        "rating": 2,
+        "text": "É menor do que parece nas fotos, não é como na imagem.",
+        "variant": "500W 8Ah",
+        "date": "2026-01-12",
+        "helpful": 11
+      },
+      {
+        "rating": 3,
+        "text": "A montagem é ok, mas o manual não explica como regular o freio.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-13",
+        "helpful": 6
+      },
+      {
+        "rating": 3,
+        "text": "A potência é boa, mas para quem tem 100 kg não sobe igual ao vídeo.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-14",
+        "helpful": 18
+      },
+      {
+        "rating": 3,
+        "text": "Entrega atrasou 6 dias, mas o produto é bom.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-15",
+        "helpful": 2
+      },
+      {
+        "rating": 2,
+        "text": "Achei caro pelo que oferece, o acabamento deixa a desejar.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-16",
+        "helpful": 5
+      },
+      {
+        "rating": 5,
+        "text": "Freio a disco funciona muito bem, me senti seguro na descida.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-17",
+        "helpful": 8
+      },
+      {
+        "rating": 4,
+        "text": "Dobra fácil e cabe no porta-malas do carro, exatamente o que eu queria.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-18",
+        "helpful": 10
+      },
+      {
+        "rating": 2,
+        "text": "A caixa chegou violada e faltava uma chave.",
+        "variant": "500W 8Ah",
+        "date": "2026-01-19",
+        "helpful": 13
+      },
+      {
+        "rating": 5,
+        "text": "Atendimento respondeu rápido quando perguntei sobre a garantia.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-20",
+        "helpful": 3
+      },
+      {
+        "rating": 2,
+        "text": "Autonomia bem menor que o anúncio, esperava mais por esse preço.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-21",
+        "helpful": 19
+      },
+      {
+        "rating": 3,
+        "text": "Não entendi como calibrar o pneu, faltou instrução no manual.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-22",
+        "helpful": 4
+      },
+      {
+        "rating": 4,
+        "text": "Uso todo dia para ir ao trabalho, economia boa comparado ao ônibus.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-23",
+        "helpful": 7
+      },
+      {
+        "rating": 1,
+        "text": "O motor começou a fazer barulho depois de 3 semanas.",
+        "variant": "500W 8Ah",
+        "date": "2026-01-24",
+        "helpful": 22
+      },
+      {
+        "rating": 5,
+        "text": "Suspensão boa, passa no calçamento sem judiar da coluna.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-25",
+        "helpful": 9
+      },
+      {
+        "rating": 2,
+        "text": "A foto mostra um bagageiro que não vem no produto.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-26",
+        "helpful": 15
+      },
+      {
+        "rating": 3,
+        "text": "Bom custo-benefício, mas a embalagem podia ser melhor.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-27",
+        "helpful": 3
+      },
+      {
+        "rating": 4,
+        "text": "Bateria carrega em 4 horas como descrito, sem esquentar.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-28",
+        "helpful": 6
+      },
+      {
+        "rating": 2,
+        "text": "Demorou 12 dias para chegar, e ainda veio com a caixa aberta.",
+        "variant": "500W 8Ah",
+        "date": "2026-01-29",
+        "helpful": 8
+      },
+      {
+        "rating": 5,
+        "text": "Melhor compra do ano, subo a ladeira com 90 kg sem descer.",
+        "variant": "500W 12Ah",
+        "date": "2026-01-30",
+        "helpful": 14
+      },
+      {
+        "rating": 2,
+        "text": "O selim é duro e o anúncio não fala isso.",
+        "variant": "500W 12Ah",
+        "date": "2026-02-01",
+        "helpful": 5
+      }
+    ]
+  },
+  "platform": "shopee",
+  "artifacts": {
+    "product_strategy": {
+      "main_selling_point": "Motor 500W sobe ladeira de 15° com adulto de 90 kg sem perder velocidade",
+      "positioning": "Patinete de entrada com motor forte",
+      "pricing": {
+        "target_price": 2634.62,
+        "breakeven_price": 2044.78,
+        "net_margin_at_target": 0.15
+      }
+    }
+  }
+}

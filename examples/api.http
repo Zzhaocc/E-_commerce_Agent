@@ -1,0 +1,91 @@
+### CrossBorderOps Agent Platform · API 示例
+### 用 VS Code REST Client / JetBrains HTTP Client 可直接逐条执行
+### 或对照 docs/API.md 用 curl
+
+@baseUrl = http://127.0.0.1:8000
+@projectId = prj_demo_scooter
+@runId = 替换为实际 run_id
+
+### 1. 健康检查
+GET {{baseUrl}}/api/health
+
+### 2. Agent 与工具目录
+GET {{baseUrl}}/api/meta/catalog
+
+### 3. Agent 输入/输出契约（JSON Schema）
+GET {{baseUrl}}/api/contracts/01_market_research
+
+### 4. 项目列表
+GET {{baseUrl}}/api/projects
+
+### 5. 项目详情（含运行与产物索引）
+GET {{baseUrl}}/api/projects/{{projectId}}
+
+### 6. 新建项目
+POST {{baseUrl}}/api/projects
+Content-Type: application/json
+
+< ./project_create.json
+
+### 7. 跑完整流水线（异步）
+POST {{baseUrl}}/api/projects/{{projectId}}/runs
+Content-Type: application/json
+
+< ./run_full_pipeline.json
+
+### 8. 查询运行（轮询这个）
+GET {{baseUrl}}/api/runs/{{runId}}
+
+### 9. 运行 trace（llm / tool / guardrail span）
+GET {{baseUrl}}/api/runs/{{runId}}/trace
+
+### 10. 回流事件
+GET {{baseUrl}}/api/runs/{{runId}}/feedback
+
+### 11. 人工审批 → 生成发布包
+POST {{baseUrl}}/api/runs/{{runId}}/approve
+
+### 12. 驳回
+POST {{baseUrl}}/api/runs/{{runId}}/reject
+Content-Type: application/json
+
+{"reason": "主图卖点与标题不一致，退回重做"}
+
+### 13. 闭环迭代（诊断 → 回流 → v2 → 复测）
+POST {{baseUrl}}/api/runs/{{runId}}/iterate
+Content-Type: application/json
+
+< ./iterate_closed_loop.json
+
+### 14. 最新产物（按 kind 去重）
+GET {{baseUrl}}/api/projects/{{projectId}}/artifacts?latest_only=true
+
+### 15. 单 Agent 预览（返回 output + checks + guardrails + trace）
+POST {{baseUrl}}/api/agents/03_listing_creative/preview
+Content-Type: application/json
+
+< ./listing_preview.json
+
+### 16. 直接调确定性工具：单位经济模型
+POST {{baseUrl}}/api/tools/unit_economics/invoke
+Content-Type: application/json
+
+< ./tool_unit_economics.json
+
+### 17. 直接调确定性工具：市场指标
+POST {{baseUrl}}/api/tools/market_metrics/invoke
+Content-Type: application/json
+
+< ./tool_market_metrics.json
+
+### 18. 工具参数非法 → 422（契约演示）
+POST {{baseUrl}}/api/tools/unit_economics/invoke
+Content-Type: application/json
+
+{"args": {"cogs": 100, "made_up_field": true}}
+
+### 19. 回归评测
+POST {{baseUrl}}/api/eval/run?suite=golden
+
+### 20. 平台指标总览
+GET {{baseUrl}}/api/metrics/overview

@@ -1,0 +1,12 @@
+{
+  "args": {
+    "cogs": 1250,
+    "freight": 120,
+    "commission_rate": 0.14,
+    "payment_rate": 0.02,
+    "ad_rate": 0.12,
+    "coupon_budget": 0.05,
+    "target_margin": 0.15,
+    "currency": "BRL"
+  }
+}
