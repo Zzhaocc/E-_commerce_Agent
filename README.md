@@ -6,6 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square)]()
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square)]()
+[![CI](https://github.com/Zzhaocc/-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Zzhaocc/-agent/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-57%20passed-brightgreen?style=flat-square)]()
 [![Eval](https://img.shields.io/badge/golden%20eval-10%2F10-brightgreen?style=flat-square)]()
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)]()
