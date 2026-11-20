@@ -345,5 +345,8 @@ CrossBorderOps-Agent-Platform/
 - [API 参考](docs/API.md) —— 全部端点与示例
 - [面试讲解稿](docs/INTERVIEW.md) —— 90 秒版本、5 分钟版本、20 个追问与回答
 - [演示脚本](scripts/demo.py) —— 一条命令跑完整个故事
+- [贡献指南](CONTRIBUTING.md) —— 本地开发、提 PR 前必过的检查、如何新增 Agent
+
+CI 会在 push / PR 时跑 `pytest` + golden 评测 + HTTP 冒烟（见 `.github/workflows/ci.yml`）。
 
 MIT License.
