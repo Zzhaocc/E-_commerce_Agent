@@ -221,7 +221,9 @@ def _ev_review(ctx: AgentContext, inp: dict, call) -> dict[str, Any]:
     strategy = ctx.artifacts.get("product_strategy") or {}
     points = [strategy.get("main_selling_point", "")] + list(strategy.get("secondary_points") or [])
     points = [p for p in points if p]
-    rank = call("selling_point_rank", {"reviews": inp["reviews"], "selling_points": points}) if points else {"ranking": []}
+    rank = (
+        call("selling_point_rank", {"reviews": inp["reviews"], "selling_points": points}) if points else {"ranking": []}
+    )
     return {"review_stats": stats, "selling_point_rank": rank}
 
 

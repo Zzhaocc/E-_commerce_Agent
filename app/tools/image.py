@@ -20,9 +20,7 @@ _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 _JPEG_SOI = b"\xff\xd8"
 
 # SOF0(基线) / SOF2(渐进) 等帧头标记，尺寸就写在这类段里
-_JPEG_SOF_MARKERS = frozenset(
-    {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
-)
+_JPEG_SOF_MARKERS = frozenset({0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF})
 
 # 白底要求：只有这两个平台强制
 _WHITE_BG_PLATFORMS = frozenset({"shopee", "amazon"})
@@ -145,8 +143,7 @@ class CheckImageArgs(BaseModel):
 
 @tool(
     "check_main_image",
-    "校验主图像素下限、推荐像素、1:1 比例、白底与文字覆盖；"
-    "PNG/JPEG 尺寸直接从文件头解析，不依赖 Pillow。",
+    "校验主图像素下限、推荐像素、1:1 比例、白底与文字覆盖；PNG/JPEG 尺寸直接从文件头解析，不依赖 Pillow。",
     CheckImageArgs,
     tags=("04",),
 )
@@ -157,9 +154,7 @@ def check_main_image(a: CheckImageArgs) -> dict[str, Any]:
         raise ToolError("check_main_image", "缺少图片尺寸信息：请传 path 或 declared_width/height")
 
     warnings: list[str] = list(notes)
-    declared_pair = (
-        (int(a.declared_width), int(a.declared_height)) if has_declared else None
-    )
+    declared_pair = (int(a.declared_width), int(a.declared_height)) if has_declared else None
 
     if a.path is not None:
         image_path = Path(a.path)

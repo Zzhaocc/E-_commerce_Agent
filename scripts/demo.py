@@ -70,7 +70,9 @@ def main() -> int:
             passed = sum(1 for c in (step.checks or []) if c.get("passed"))
             total = len(step.checks or [])
             flags = f"护栏 {len(step.guardrails)} 条" if step.guardrails else "无护栏事件"
-            print(f"  {step.agent_id:<22} ✓ checks {passed}/{total}  tokens {step.tokens_in + step.tokens_out:<5} {flags}")
+            print(
+                f"  {step.agent_id:<22} ✓ checks {passed}/{total}  tokens {step.tokens_in + step.tokens_out:<5} {flags}"
+            )
 
         market = artifact(db, run_id, "market_report").content
         strategy = artifact(db, run_id, "product_strategy").content
@@ -127,8 +129,10 @@ def main() -> int:
     retest = (loop.metrics or {}).get("retest") or {}
     if retest:
         before, after = retest["before"], retest["after"]
-        print(f"\n  复测：ROAS {before['roas']:.2f} → {after['roas']:.2f}（Δ {retest['roas_delta']:+.2f}）"
-              f"｜CPA {before['cpa']:.0f} → {after['cpa']:.0f}")
+        print(
+            f"\n  复测：ROAS {before['roas']:.2f} → {after['roas']:.2f}（Δ {retest['roas_delta']:+.2f}）"
+            f"｜CPA {before['cpa']:.0f} → {after['cpa']:.0f}"
+        )
         print(f"  结论：{retest['verdict']}")
     print(f"  Listing 版本：{[(v.version, v.status) for v in versions]}")
 

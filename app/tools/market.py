@@ -1,7 +1,7 @@
 """01 市场分析：确定性指标计算。
 
 为什么必须用脚本：CR4、HHI、加权分位数、价格带波谷、配置交叉表，
-任何一项让模型"估"都会在面试里被追问口径。这里每个数都有公式。
+任何一项让模型"估"都会造成口径不可复核。这里每个数都有公式。
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def _bucketize(prices: list[float], sales: list[int], n: int = 6) -> list[dict[s
         return [{"low": lo, "high": hi, "sku": len(prices), "sales": sum(sales)}]
     width = (hi - lo) / n
     buckets = [{"low": lo + i * width, "high": lo + (i + 1) * width, "sku": 0, "sales": 0} for i in range(n)]
-    for price, sale in zip(prices, sales):
+    for price, sale in zip(prices, sales, strict=False):
         idx = min(n - 1, int((price - lo) / width))
         buckets[idx]["sku"] += 1
         buckets[idx]["sales"] += sale
@@ -73,7 +73,7 @@ def market_metrics(a: MarketMetricsArgs) -> dict[str, Any]:
     sales = [max(0, r.monthly_sales) for r in rows]
     total_sales = sum(sales)
     n = len(rows)
-    gmv = sum(p * s for p, s in zip(prices, sales))
+    gmv = sum(p * s for p, s in zip(prices, sales, strict=False))
 
     # ---- 集中度：按销量份额 ----
     if total_sales > 0:
@@ -84,7 +84,7 @@ def market_metrics(a: MarketMetricsArgs) -> dict[str, Any]:
     hhi = sum(sh * sh for sh in shares) * 10000
 
     # ---- 加权价格分位 ----
-    pairs = sorted(zip(prices, [s if total_sales > 0 else 1 for s in sales]), key=lambda x: x[0])
+    pairs = sorted(zip(prices, [s if total_sales > 0 else 1 for s in sales], strict=False), key=lambda x: x[0])
     p25 = _weighted_quantile(pairs, 0.25)
     median = _weighted_quantile(pairs, 0.50)
     p75 = _weighted_quantile(pairs, 0.75)
@@ -178,10 +178,7 @@ def market_metrics(a: MarketMetricsArgs) -> dict[str, Any]:
             "recommended_high": round(valley_high * 1.02, 2),
             "valley_efficiency": valley.get("efficiency", 0),
             "valley_basis": valley_basis,
-            "buckets": [
-                {k: v for k, v in b.items() if not k.startswith("_")}
-                for b in buckets
-            ],
+            "buckets": [{k: v for k, v in b.items() if not k.startswith("_")} for b in buckets],
         },
         "config_matrix": config_matrix,
         "method": {

@@ -33,6 +33,24 @@ def _net(price: float, cost: float, rate_sum: float, coupon: float) -> float:
     return price * (1 - rate_sum - coupon) - cost
 
 
+def _price_position(net: float, price: float) -> str:
+    """把价格阶梯上的每个档位标成经营语义，便于运营直接读。
+
+    <0           亏损区（卖一件亏一件）
+    <5%          薄利区（扛不住退货与广告波动）
+    <25%         健康区
+    ≥25%         高毛利区
+    """
+    margin = net / price if price else 0.0
+    if net < 0:
+        return "亏损区"
+    if margin < 0.05:
+        return "薄利区"
+    if margin < 0.25:
+        return "健康区"
+    return "高毛利区"
+
+
 @tool(
     "unit_economics",
     "计算单件净利率、盈亏平衡价、目标净利价、券/折余量，并给出价格阶梯。输入缺成本直接报错，不估算。",
@@ -67,9 +85,7 @@ def unit_economics(a: UnitEconomicsArgs) -> dict[str, Any]:
                 "price": price,
                 "net_profit": round(net, 2),
                 "net_margin": round(net / price, 4),
-                "position": (
-                    "亏损区" if net < 0 else "薄利区" if net / price < 0.05 else "健康区" if net / price < 0.25 else "高毛利区"
-                ),
+                "position": _price_position(net, price),
             }
         )
 

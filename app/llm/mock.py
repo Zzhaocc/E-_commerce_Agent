@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from app.llm.base import ChatResult, ToolCall, Usage, estimate_tokens
 from app.llm.scenarios import BUILDERS

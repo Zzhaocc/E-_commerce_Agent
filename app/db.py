@@ -50,6 +50,16 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
+def ping() -> bool:
+    """就绪探针用：确认连接池能拿到一条可用连接。"""
+    try:
+        with engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+        return True
+    except Exception:  # noqa: BLE001 —— 探针只关心可用性，不抛出
+        return False
+
+
 @contextmanager
 def session_scope() -> Iterator[Session]:
     """后台任务（工作流引擎）用：不依赖 FastAPI 依赖注入。"""

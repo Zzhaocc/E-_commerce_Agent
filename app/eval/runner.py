@@ -10,11 +10,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from app.agents.base import AgentContext
 from app.agents.registry import get_agent
-from app.agents.runtime import AgentRunError, AgentRuntime
+from app.agents.runtime import AgentRuntime
 from app.db import session_scope
 from app.llm.router import get_provider
 from app.models import EvalRun, new_id
@@ -93,7 +94,10 @@ def _cases() -> list[Case]:
             "02_product_strategy",
             {**SCOOTER_BRIEF, "market_analysis": {"price_band": {"median": 2699}}},
             [
-                ("四角色齐全", lambda o: {r["role"] for r in o["sku_roles"]} == {"引流款", "主推款", "利润款", "形象款"}),
+                (
+                    "四角色齐全",
+                    lambda o: {r["role"] for r in o["sku_roles"]} == {"引流款", "主推款", "利润款", "形象款"},
+                ),
                 ("目标价 ≥ 盈亏价", lambda o: o["pricing"]["target_price"] >= o["pricing"]["breakeven_price"]),
                 ("净利率达标", lambda o: abs(o["pricing"]["net_margin_at_target"] - 0.15) < 0.01),
                 ("唯一主卖点", lambda o: 0 < len(o["main_selling_point"]) <= 80),
@@ -171,7 +175,10 @@ def _cases() -> list[Case]:
                 ("识别出 ROAS 低于盈亏线", lambda o: o["funnel"]["roas"] < o["breakeven"]["roas_min"]),
                 ("给出 P0 动作", lambda o: any(a["priority"] == "P0" for a in o["actions"])),
                 ("P0 有 SLA", lambda o: all(a["sla_hours"] <= 24 for a in o["actions"] if a["priority"] == "P0")),
-                ("诊断带数字证据", lambda o: any(any(ch.isdigit() for ch in e) for d in o["diagnosis"] for e in d["evidence"])),
+                (
+                    "诊断带数字证据",
+                    lambda o: any(any(ch.isdigit() for ch in e) for d in o["diagnosis"] for e in d["evidence"]),
+                ),
             ],
             note="亏损状态必须给 P0，且 24 小时内可执行",
         ),
@@ -219,7 +226,7 @@ def run_suite(suite: str = "golden") -> dict[str, Any]:
                         "assertions": len(case.assertions),
                     }
                 )
-        except (AgentRunError, Exception) as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 —— 评测要记录任何失败，而不是中断整轮
             message = str(exc)
             if case.expect_error:
                 ok = case.expect_error in message or case.expect_error in type(exc).__name__

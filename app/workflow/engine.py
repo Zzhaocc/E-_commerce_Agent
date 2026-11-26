@@ -17,7 +17,7 @@ from __future__ import annotations
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -28,7 +28,10 @@ from app.agents.runtime import AgentRunError, AgentRuntime
 from app.config import get_settings
 from app.db import session_scope
 from app.llm.router import get_provider
+from app.logging import get_logger
 from app.models import Artifact, FeedbackEvent, Project, Run, StepRun, TraceSpan, new_id
+
+log = get_logger("app.workflow")
 
 _WRITE_LOCK = threading.Lock()  # SQLite 单写者：持久化串行化，Agent 执行仍并行
 
@@ -36,7 +39,7 @@ CREATIVE_CLUSTER = ["03_listing_creative", "04_product_image", "05_product_video
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class RunEngine:
@@ -59,6 +62,7 @@ class RunEngine:
             )
             db.add(run)
             db.flush()
+            log.info("run_created", extra={"run_id": run.id, "project_id": project.id, "mode": mode})
             return run.id
 
     def launch(self, run_id: str) -> None:
@@ -98,6 +102,7 @@ class RunEngine:
                     brief["ad_rows_after"] = extra["ad_rows_after"]
 
             artifacts = self._load_artifacts(project.id)
+            log.info("run_started", extra={"run_id": run_id, "mode": mode, "project_id": project.id})
 
             if mode == "single":
                 self._run_single(run_id, project_dict, brief, artifacts, agent_id)
@@ -113,7 +118,8 @@ class RunEngine:
             self._finish(run_id, started)
         except AgentRunError as exc:
             self._fail(run_id, str(exc))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 —— 兜底：任何异常都要把运行置为 failed
+            log.exception("run_crashed", extra={"run_id": run_id})
             self._fail(run_id, f"{type(exc).__name__}: {exc}")
 
     # ------------------------------------------------------------------ #
@@ -181,17 +187,29 @@ class RunEngine:
             self._update_stage(run_id, "retest")
             after_brief = {**brief, "ad_rows": brief["ad_rows_after"]}
             after = self._step(run_id, project, after_brief, artifacts, "06_advertising", 5, kind="ad_plan_retest")
-            before = (ads.get("funnel") or {})
-            after_f = (after.get("funnel") or {})
+            before = ads.get("funnel") or {}
+            after_f = after.get("funnel") or {}
             with session_scope() as db:
                 run = db.get(Run, run_id)
                 metrics = dict(run.metrics or {})
                 metrics["retest"] = {
-                    "before": {"roas": before.get("roas"), "cpa": before.get("cpa"), "cvr": before.get("cvr"), "ctr": before.get("ctr")},
-                    "after": {"roas": after_f.get("roas"), "cpa": after_f.get("cpa"), "cvr": after_f.get("cvr"), "ctr": after_f.get("ctr")},
+                    "before": {
+                        "roas": before.get("roas"),
+                        "cpa": before.get("cpa"),
+                        "cvr": before.get("cvr"),
+                        "ctr": before.get("ctr"),
+                    },
+                    "after": {
+                        "roas": after_f.get("roas"),
+                        "cpa": after_f.get("cpa"),
+                        "cvr": after_f.get("cvr"),
+                        "ctr": after_f.get("ctr"),
+                    },
                     "roas_delta": round((after_f.get("roas") or 0) - (before.get("roas") or 0), 4),
                     "cpa_delta": round((after_f.get("cpa") or 0) - (before.get("cpa") or 0), 4),
-                    "verdict": "达标" if (after_f.get("roas") or 0) >= (after.get("breakeven") or {}).get("roas_min", 0) else "未达标，回到诊断",
+                    "verdict": "达标"
+                    if (after_f.get("roas") or 0) >= (after.get("breakeven") or {}).get("roas_min", 0)
+                    else "未达标，回到诊断",
                 }
                 run.metrics = metrics
 
@@ -269,7 +287,6 @@ class RunEngine:
             step.latency_ms = result.latency_ms
             step.attempts = result.attempts
 
-            project_obj = db.get(Project, project["id"])
             if version > 1:
                 prev = db.scalars(
                     select(Artifact).where(
@@ -309,8 +326,20 @@ class RunEngine:
                         attrs=span.get("attrs") or {},
                     )
                 )
-            _ = project_obj
 
+        log.info(
+            "step_succeeded",
+            extra={
+                "run_id": run_id,
+                "agent_id": agent_id,
+                "seq": seq,
+                "artifact_version": version,
+                "tokens": result.usage.total,
+                "checks": len(result.checks),
+                "guardrails": len(result.guardrails),
+                "blocked": result.blocked,
+            },
+        )
         self._bump_step_counter(run_id, agent_id)
         return output
 
@@ -318,7 +347,9 @@ class RunEngine:
         """03/04/05 并行：三者都只依赖 02 的产物，互不阻塞。"""
 
         def work(agent_id: str) -> tuple[str, dict[str, Any]]:
-            return agent_id, self._step(run_id, project, brief, artifacts, agent_id, start_seq + CREATIVE_CLUSTER.index(agent_id))
+            return agent_id, self._step(
+                run_id, project, brief, artifacts, agent_id, start_seq + CREATIVE_CLUSTER.index(agent_id)
+            )
 
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix="creative") as pool:
             for agent_id, output in pool.map(work, CREATIVE_CLUSTER):
@@ -371,10 +402,17 @@ class RunEngine:
 
         pack = {
             "project": project,
-            "market": {"verdict": (market.get("precheck") or {}).get("verdict"), "price_band": market.get("price_band")},
+            "market": {
+                "verdict": (market.get("precheck") or {}).get("verdict"),
+                "price_band": market.get("price_band"),
+            },
             "strategy": {"main_selling_point": strategy.get("main_selling_point"), "pricing": strategy.get("pricing")},
             "listing": listing,
-            "images": {"cover_spec": image.get("cover_spec"), "grid": image.get("nine_grid"), "compliance": image.get("compliance")},
+            "images": {
+                "cover_spec": image.get("cover_spec"),
+                "grid": image.get("nine_grid"),
+                "compliance": image.get("compliance"),
+            },
             "video": {"hook": video.get("hook"), "shots": video.get("shots"), "captions": video.get("captions")},
             "checklist": self._publish_checklist(listing, image, video),
         }
@@ -395,9 +433,9 @@ class RunEngine:
             )
             for kind in ("listing_pack", "image_pack", "video_pack"):
                 row = db.scalars(
-                    select(Artifact).where(
-                        Artifact.project_id == project["id"], Artifact.kind == kind
-                    ).order_by(Artifact.version.desc())
+                    select(Artifact)
+                    .where(Artifact.project_id == project["id"], Artifact.kind == kind)
+                    .order_by(Artifact.version.desc())
                 ).first()
                 if row:
                     row.status = "approved"
@@ -435,13 +473,17 @@ class RunEngine:
     def _save_feedback(self, run_id: str, project_id: str, ads: dict, review: dict) -> dict[str, Any]:
         items: list[dict[str, Any]] = []
 
-        for action in (ads.get("actions") or []):
+        for action in ads.get("actions") or []:
             if action.get("priority") != "P0":
                 continue
             text = action.get("action", "")
             # 只有"改素材"类动作才回流给创意 Agent；调价/预算类动作留在广告计划里执行
             if any(k in text for k in ("主图", "图片", "详情页", "标题", "视频")):
-                target = "04_product_image" if ("主图" in text or "图片" in text) and "详情页" not in text else "03_listing_creative"
+                target = (
+                    "04_product_image"
+                    if ("主图" in text or "图片" in text) and "详情页" not in text
+                    else "03_listing_creative"
+                )
             else:
                 continue
             issue = (ads.get("diagnosis") or [{}])[0].get("symptom", "广告漏斗异常")
@@ -514,7 +556,9 @@ class RunEngine:
 
     def _next_version(self, project_id: str, kind: str) -> int:
         with session_scope() as db:
-            current = db.scalar(select(func.max(Artifact.version)).where(Artifact.project_id == project_id, Artifact.kind == kind))
+            current = db.scalar(
+                select(func.max(Artifact.version)).where(Artifact.project_id == project_id, Artifact.kind == kind)
+            )
             return int(current or 0) + 1
 
     def _set_status(self, run_id: str, status: str, stage: str) -> None:
@@ -579,15 +623,27 @@ class RunEngine:
         def add(item: str, passed: bool, detail: str = "") -> None:
             items.append({"item": item, "passed": passed, "detail": detail})
 
-        add("标题字符在平台上限内", (listing.get("title") or {}).get("chars", 0) <= (listing.get("title") or {}).get("limit", 999),
-            f"{(listing.get('title') or {}).get('chars')}/{(listing.get('title') or {}).get('limit')}")
-        add("无禁用词", not (listing.get("compliance") or {}).get("blocked_terms"), str((listing.get("compliance") or {}).get("blocked_terms")))
-        add("9 图分工完整", len((image.get("nine_grid") or [])) == 9, f"{len(image.get('nine_grid') or [])} 张")
-        add("视频时长达标", bool((video.get("timing_check") or {}).get("within_target")), str((video.get("timing_check") or {}).get("total_duration")))
+        add(
+            "标题字符在平台上限内",
+            (listing.get("title") or {}).get("chars", 0) <= (listing.get("title") or {}).get("limit", 999),
+            f"{(listing.get('title') or {}).get('chars')}/{(listing.get('title') or {}).get('limit')}",
+        )
+        add(
+            "无禁用词",
+            not (listing.get("compliance") or {}).get("blocked_terms"),
+            str((listing.get("compliance") or {}).get("blocked_terms")),
+        )
+        add("9 图分工完整", len(image.get("nine_grid") or []) == 9, f"{len(image.get('nine_grid') or [])} 张")
+        add(
+            "视频时长达标",
+            bool((video.get("timing_check") or {}).get("within_target")),
+            str((video.get("timing_check") or {}).get("total_duration")),
+        )
         add("主卖点唯一", bool(listing.get("title") and listing.get("bullets")), "标题与五点均围绕同一卖点")
         return items
 
     def _finish(self, run_id: str, started: float) -> None:
+        wall_ms = int((time.perf_counter() - started) * 1000)
         with session_scope() as db:
             run = db.get(Run, run_id)
             if run is None:
@@ -600,8 +656,19 @@ class RunEngine:
         with session_scope() as db:
             run = db.get(Run, run_id)
             metrics = dict(run.metrics or {})
-            metrics["wall_ms"] = int((time.perf_counter() - started) * 1000)
+            metrics["wall_ms"] = wall_ms
             run.metrics = metrics
+            status = run.status
+        log.info(
+            "run_finished",
+            extra={
+                "run_id": run_id,
+                "status": status,
+                "wall_ms": wall_ms,
+                "tokens": (metrics or {}).get("tokens"),
+                "cost_usd": (metrics or {}).get("cost_usd"),
+            },
+        )
 
     def _fail(self, run_id: str, message: str) -> None:
         with session_scope() as db:
@@ -611,6 +678,7 @@ class RunEngine:
             run.status = "failed"
             run.error = message
             run.finished_at = _now()
+        log.warning("run_failed", extra={"run_id": run_id, "error": message})
         self._summarize(run_id)
 
 

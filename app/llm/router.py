@@ -16,6 +16,6 @@ def get_provider(name: str | None = None) -> LLMProvider:
         return MockProvider()
     if key in {"openai_compatible", "openai", "deepseek", "qwen", "vllm"}:
         if not s.llm_api_key:
-            raise RuntimeError("LLM_PROVIDER 指向真实模型但未配置 LLM_API_KEY；演示请用 LLM_PROVIDER=mock")
+            raise RuntimeError("LLM_PROVIDER 指向真实模型但未配置 LLM_API_KEY；离线运行请用 LLM_PROVIDER=mock")
         return OpenAICompatibleProvider()
     raise ValueError(f"未知的 LLM_PROVIDER: {key}")

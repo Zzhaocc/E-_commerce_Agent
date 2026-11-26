@@ -36,8 +36,13 @@ def main() -> int:
     with httpx.Client(base_url=BASE, timeout=30.0, trust_env=False) as c:
         print(f"目标：{BASE}")
 
-        health = c.get("/api/health").json()
-        check("健康检查", health["status"] == "ok", f"{health['provider']} / {health['model']}")
+        health = c.get("/api/health")
+        check("健康检查", health.json()["status"] == "ok", f"{health.json()['provider']} / {health.json()['model']}")
+        check("请求关联 ID", bool(health.headers.get("X-Request-ID")), health.headers.get("X-Request-ID", ""))
+        check("安全响应头", health.headers.get("X-Content-Type-Options") == "nosniff")
+
+        ready = c.get("/api/ready")
+        check("就绪探针", ready.status_code == 200 and ready.json()["status"] == "ready", str(ready.status_code))
 
         catalog = c.get("/api/meta/catalog").json()
         check("7 个 Agent", len(catalog["agents"]) == 7, f"{len(catalog['agents'])} 个")
@@ -45,7 +50,12 @@ def main() -> int:
 
         project = c.post(
             "/api/projects",
-            json={"name": "冒烟验证项目", "category": "Patinetes Elétricos", "platform": "shopee", "brief": SCOOTER_BRIEF},
+            json={
+                "name": "冒烟验证项目",
+                "category": "Patinetes Elétricos",
+                "platform": "shopee",
+                "brief": SCOOTER_BRIEF,
+            },
         ).json()
         check("创建项目", bool(project.get("id")), project["id"])
 
@@ -61,8 +71,11 @@ def main() -> int:
 
         check("流水线停在人工审批", run["status"] == "awaiting_approval", f"status={run['status']}")
         check("5 个步骤全部成功", all(s["status"] == "succeeded" for s in run["steps"]))
-        check("自检通过", run["metrics"]["checks_passed"] >= run["metrics"]["checks_total"] - 1,
-              f"{run['metrics']['checks_passed']}/{run['metrics']['checks_total']}")
+        check(
+            "自检通过",
+            run["metrics"]["checks_passed"] >= run["metrics"]["checks_total"] - 1,
+            f"{run['metrics']['checks_passed']}/{run['metrics']['checks_total']}",
+        )
 
         approved = c.post(f"/api/runs/{run_id}/approve")
         check("审批通过", approved.status_code == 200)
@@ -77,31 +90,60 @@ def main() -> int:
 
         listing = artifacts.get("listing_pack", {})
         title = listing.get("title", {})
-        check("标题在字符上限内", title.get("chars", 0) <= title.get("limit", 1), f"{title.get('chars')}/{title.get('limit')}")
+        check(
+            "标题在字符上限内",
+            title.get("chars", 0) <= title.get("limit", 1),
+            f"{title.get('chars')}/{title.get('limit')}",
+        )
         check("合规通过", listing.get("compliance", {}).get("passed") is True)
-        check("标题前段含核心词",
-              any(k.lower() in title.get("text", "").lower() for k in listing.get("keyword_map", {}).get("primary", [])[:3]),
-              title.get("text", "")[:40])
+        check(
+            "标题前段含核心词",
+            any(
+                k.lower() in title.get("text", "").lower()
+                for k in listing.get("keyword_map", {}).get("primary", [])[:3]
+            ),
+            title.get("text", "")[:40],
+        )
 
         band = artifacts.get("market_report", {}).get("price_band", {})
         pricing = artifacts.get("product_strategy", {}).get("pricing", {})
         check("价格带次序正确", band.get("valley_low", 0) < band.get("valley_high", 1))
-        check("目标价高于盈亏价", pricing.get("target_price", 0) > pricing.get("breakeven_price", 1),
-              f"{pricing.get('breakeven_price')} / {pricing.get('target_price')}")
+        check(
+            "目标价高于盈亏价",
+            pricing.get("target_price", 0) > pricing.get("breakeven_price", 1),
+            f"{pricing.get('breakeven_price')} / {pricing.get('target_price')}",
+        )
 
         tool = c.post(
             "/api/tools/unit_economics/invoke",
-            json={"args": {"cogs": 1250, "freight": 120, "commission_rate": 0.14, "payment_rate": 0.02,
-                           "ad_rate": 0.12, "coupon_budget": 0.05, "target_margin": 0.15}},
+            json={
+                "args": {
+                    "cogs": 1250,
+                    "freight": 120,
+                    "commission_rate": 0.14,
+                    "payment_rate": 0.02,
+                    "ad_rate": 0.12,
+                    "coupon_budget": 0.05,
+                    "target_margin": 0.15,
+                }
+            },
         ).json()["result"]
         expected_breakeven = round(1370 / (1 - 0.28 - 0.05), 2)
-        check("盈亏价可复算", abs(tool["breakeven_price"] - expected_breakeven) < 0.01,
-              f"{tool['breakeven_price']} == {expected_breakeven}")
+        check(
+            "盈亏价可复算",
+            abs(tool["breakeven_price"] - expected_breakeven) < 0.01,
+            f"{tool['breakeven_price']} == {expected_breakeven}",
+        )
 
         preview = c.post(
             "/api/agents/03_listing_creative/preview",
-            json={"brief": SCOOTER_BRIEF, "platform": "shopee",
-                  "artifacts": {"product_strategy": {"main_selling_point": "Motor 500W sobe ladeira de 15°", "pricing": {}}}},
+            json={
+                "brief": SCOOTER_BRIEF,
+                "platform": "shopee",
+                "artifacts": {
+                    "product_strategy": {"main_selling_point": "Motor 500W sobe ladeira de 15°", "pricing": {}}
+                },
+            },
         )
         check("单 Agent 预览", preview.status_code == 200)
         if preview.status_code == 200:
@@ -115,7 +157,9 @@ def main() -> int:
         check("回归评测 ≥0.9", evaluation["score"] >= 0.9, f"{evaluation['passed']}/{evaluation['total']}")
 
         overview = c.get("/api/metrics/overview").json()
-        check("指标可读", overview["runs"]["total"] > 0, f"runs={overview['runs']['total']} tokens={overview['tokens']}")
+        check(
+            "指标可读", overview["runs"]["total"] > 0, f"runs={overview['runs']['total']} tokens={overview['tokens']}"
+        )
 
     print()
     if failures:

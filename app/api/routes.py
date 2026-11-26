@@ -2,30 +2,37 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import time
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
+from app import __version__
 from app.agents.base import AgentContext
 from app.agents.contracts import CONTRACTS
 from app.agents.registry import AGENTS, get_agent
 from app.agents.runtime import AgentRunError, AgentRuntime
 from app.api.schemas import IterateRequest, PreviewRequest, ProjectCreate, RejectRequest, RunCreate
 from app.config import get_settings
-from app.db import get_db
+from app.db import get_db, ping
 from app.llm.router import get_provider
 from app.models import Artifact, EvalRun, FeedbackEvent, Project, Run, StepRun, TraceSpan
-from app.tools.base import ToolError, get_tool, invoke_tool, list_tools
+from app.tools.base import ToolError, get_tool, invoke_tool, list_tools, load_all_tools
 from app.workflow.engine import agent_catalog, engine
 
 router = APIRouter(prefix="/api")
 
 
 def _dt(value: datetime | None) -> str | None:
-    return value.isoformat() + "Z" if value else None
+    """统一成 UTC ISO8601（带 Z）。SQLite 取回的是 naive datetime，按 UTC 处理。"""
+    if value is None:
+        return None
+    aware = value.replace(tzinfo=UTC) if value.tzinfo is None else value
+    return aware.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _project_out(p: Project) -> dict[str, Any]:
@@ -60,30 +67,85 @@ def _run_out(run: Run) -> dict[str, Any]:
 # 元信息
 # --------------------------------------------------------------------------- #
 @router.get("/health", tags=["meta"])
-def health() -> dict[str, Any]:
+def health(request: Request) -> dict[str, Any]:
+    """存活探针：进程能响应即返回 200，不做任何重依赖检查。
+
+    ``provider`` / ``model`` 返回**实际生效**的实现；配置写错（例如指向真实模型
+    但没给 key）时不会让探针失败，而是把原因放进 ``provider_error``。
+    """
     s = get_settings()
-    return {
+    started_at = getattr(request.app.state, "started_at", None)
+    provider, model = s.llm_provider, s.llm_model
+    provider_error: str | None = None
+    try:
+        active = get_provider()
+        provider, model = active.name, active.model
+    except Exception as exc:  # noqa: BLE001 —— 探针必须始终可答
+        provider_error = str(exc)
+
+    payload: dict[str, Any] = {
         "status": "ok",
-        "version": s.version,
-        "provider": s.llm_provider,
-        "model": s.llm_model,
+        "version": __version__,
+        "environment": s.environment,
+        "provider": provider,
+        "model": model,
         "human_approval": s.human_approval,
         "database": "sqlite" if s.sqlite else "external",
+        "docs_enabled": s.docs_enabled,
+        "uptime_s": round(time.time() - started_at, 3) if started_at else 0.0,
     }
+    if provider_error:
+        payload["provider_error"] = provider_error
+    return payload
+
+
+@router.get("/ready", tags=["meta"])
+def ready() -> JSONResponse:
+    """就绪探针：数据库、工具注册表、Agent 注册表都可用才返回 200。
+
+    负载均衡 / K8s readinessProbe 应指向这里；返回 503 时先摘流量再排查。
+    """
+    load_all_tools()
+    checks = {
+        "database": ping(),
+        "tools": len(list_tools()) >= 10,
+        "agents": len(AGENTS) == 7,
+        "contracts": len(CONTRACTS) == 7,
+    }
+    ok = all(checks.values())
+    return JSONResponse(
+        status_code=200 if ok else 503,
+        content={"status": "ready" if ok else "degraded", "checks": checks, "version": __version__},
+    )
 
 
 @router.get("/meta/catalog", tags=["meta"])
 def catalog() -> dict[str, Any]:
     s = get_settings()
     return {
+        "version": __version__,
         "agents": agent_catalog(),
         "pipeline": {
-            "full": ["01_market_research", "02_product_strategy", "03_listing_creative", "04_product_image", "05_product_video"],
+            "full": [
+                "01_market_research",
+                "02_product_strategy",
+                "03_listing_creative",
+                "04_product_image",
+                "05_product_video",
+            ],
             "parallel_cluster": ["03_listing_creative", "04_product_image", "05_product_video"],
-            "feedback": {"06_advertising": ["03_listing_creative", "04_product_image"], "07_review": ["03_listing_creative", "04_product_image"]},
+            "feedback": {
+                "06_advertising": ["03_listing_creative", "04_product_image"],
+                "07_review": ["03_listing_creative", "04_product_image"],
+            },
         },
         "tools": [
-            {"name": t.name, "description": t.description, "tags": list(t.tags), "schema": t.schema()["function"]["parameters"]}
+            {
+                "name": t.name,
+                "description": t.description,
+                "tags": list(t.tags),
+                "schema": t.schema()["function"]["parameters"],
+            }
             for t in list_tools()
         ],
         "platforms": ["shopee", "mercadolivre", "amazon", "tiktok", "shopify"],
@@ -131,11 +193,7 @@ def create_project(body: ProjectCreate, db: Session = Depends(get_db)) -> dict[s
 def list_projects(limit: int = Query(50, le=200), offset: int = 0, db: Session = Depends(get_db)) -> dict[str, Any]:
     rows = db.scalars(select(Project).order_by(desc(Project.created_at)).limit(limit).offset(offset)).all()
     total = db.scalar(select(func.count()).select_from(Project)) or 0
-    counts = dict(
-        db.execute(
-            select(Run.project_id, func.count(Run.id)).group_by(Run.project_id)
-        ).all()
-    )
+    counts = dict(db.execute(select(Run.project_id, func.count(Run.id)).group_by(Run.project_id)).all())
     return {"items": [{**_project_out(p), "run_count": counts.get(p.id, 0)} for p in rows], "total": total}
 
 
@@ -152,7 +210,14 @@ def get_project(project_id: str, db: Session = Depends(get_db)) -> dict[str, Any
         **_project_out(project),
         "runs": [_run_out(r) for r in runs],
         "artifacts": [
-            {"id": a.id, "kind": a.kind, "version": a.version, "status": a.status, "run_id": a.run_id, "created_at": _dt(a.created_at)}
+            {
+                "id": a.id,
+                "kind": a.kind,
+                "version": a.version,
+                "status": a.status,
+                "run_id": a.run_id,
+                "created_at": _dt(a.created_at),
+            }
             for a in artifacts
         ],
     }
@@ -488,7 +553,12 @@ def metrics_overview(db: Session = Depends(get_db)) -> dict[str, Any]:
         bucket["latency_ms"] = int(bucket["latency_ms"] / max(1, bucket["runs"]))
         bucket["check_pass_rate"] = round(bucket["checks_passed"] / bucket["checks"], 3) if bucket["checks"] else None
     return {
-        "runs": {"total": total, "completed": completed, "failed": failed, "success_rate": round(completed / total, 3) if total else None},
+        "runs": {
+            "total": total,
+            "completed": completed,
+            "failed": failed,
+            "success_rate": round(completed / total, 3) if total else None,
+        },
         "steps": len(steps),
         "tokens": sum(s.tokens_in + s.tokens_out for s in steps),
         "cost_usd": round(sum(s.cost_usd for s in steps), 6),
@@ -514,20 +584,34 @@ def list_evals(limit: int = 20, db: Session = Depends(get_db)) -> dict[str, Any]
     rows = db.scalars(select(EvalRun).order_by(desc(EvalRun.created_at)).limit(limit)).all()
     return {
         "items": [
-            {"id": e.id, "suite": e.suite, "total": e.total, "passed": e.passed, "score": e.score, "results": e.results, "created_at": _dt(e.created_at)}
+            {
+                "id": e.id,
+                "suite": e.suite,
+                "total": e.total,
+                "passed": e.passed,
+                "score": e.score,
+                "results": e.results,
+                "created_at": _dt(e.created_at),
+            }
             for e in rows
         ]
     }
 
 
 @router.get("/demo/curl", tags=["meta"])
-def demo_curl() -> dict[str, Any]:
-    """给面试演示用：直接返回可复制的 curl 命令。"""
+def curl_examples(request: Request) -> dict[str, Any]:
+    """返回与当前部署地址一致的可复制 curl 命令，方便本地联调与接口自测。"""
     from app.seed import DEMO_PROJECT_ID
 
+    base = str(request.base_url).rstrip("/")
+
+    def curl(path: str, body: str) -> str:
+        return f'curl -X POST {base}{path} -H "Content-Type: application/json" -d {body}'
+
     return {
-        "create_run": f'curl -X POST http://127.0.0.1:8000/api/projects/{DEMO_PROJECT_ID}/runs -H "Content-Type: application/json" -d \'{{"mode":"full_pipeline"}}\'',
-        "preview_listing": 'curl -X POST http://127.0.0.1:8000/api/agents/03_listing_creative/preview -H "Content-Type: application/json" -d @examples/listing_preview.json',
-        "invoke_tool": 'curl -X POST http://127.0.0.1:8000/api/tools/market_metrics/invoke -H "Content-Type: application/json" -d @examples/tool_market_metrics.json',
-        "closed_loop": 'curl -X POST http://127.0.0.1:8000/api/runs/RUN_ID/iterate -H "Content-Type: application/json" -d @examples/iterate_closed_loop.json',
+        "base_url": base,
+        "create_run": curl(f"/api/projects/{DEMO_PROJECT_ID}/runs", '\'{"mode":"full_pipeline"}\''),
+        "preview_listing": curl("/api/agents/03_listing_creative/preview", "@examples/listing_preview.json"),
+        "invoke_tool": curl("/api/tools/market_metrics/invoke", "@examples/tool_market_metrics.json"),
+        "closed_loop": curl("/api/runs/RUN_ID/iterate", "@examples/iterate_closed_loop.json"),
     }

@@ -48,9 +48,7 @@ class ToolSpec:
         try:
             args = self.args_model.model_validate(raw_args or {})
         except ValidationError as exc:
-            detail = "; ".join(
-                f"{'.'.join(str(x) for x in e['loc']) or '<args>'}: {e['msg']}" for e in exc.errors()
-            )
+            detail = "; ".join(f"{'.'.join(str(x) for x in e['loc']) or '<args>'}: {e['msg']}" for e in exc.errors())
             raise ToolError(self.name, f"参数校验失败: {detail}") from exc
         try:
             return self.func(args)

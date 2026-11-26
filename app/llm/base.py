@@ -1,7 +1,7 @@
 """Provider 协议：只依赖 chat 一个方法，换模型不改业务代码。
 
 接入真实模型时实现 chat() 即可；mock 实现保证「没有 API key 也能完整跑通」，
-这在面试演示里比"需要配 key 才能看效果"重要得多。
+这是 CI 与本地开发不依赖外部服务的前提。
 """
 
 from __future__ import annotations

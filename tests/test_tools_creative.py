@@ -134,9 +134,7 @@ def test_title_unknown_platform_falls_back_to_shopee() -> None:
 
 
 def test_title_all_caps_and_symbol_spam_fails() -> None:
-    result = title_lint(
-        TitleLintArgs(text="ORGANIZADOR DE COZINHA #1 !!! ***", keywords=["organizador"])
-    )
+    result = title_lint(TitleLintArgs(text="ORGANIZADOR DE COZINHA #1 !!! ***", keywords=["organizador"]))
 
     assert result["uppercase_ratio"] > 0.5
     assert result["symbol_count"] > 4

@@ -21,36 +21,98 @@ from app.tools.base import ToolError, tool
 # 固定类目 + 葡语 / 英语 / 中文关键词表；顺序即并列时的稳定输出顺序。
 TAXONOMY: Final[dict[str, tuple[str, ...]]] = {
     "质量做工": (
-        "qualidade", "quebrou", "rachou", "defeito", "costura", "material",
-        "质量", "做工", "坏", "defect", "broke", "quality",
+        "qualidade",
+        "quebrou",
+        "rachou",
+        "defeito",
+        "costura",
+        "material",
+        "质量",
+        "做工",
+        "坏",
+        "defect",
+        "broke",
+        "quality",
     ),
     "尺寸容量": (
-        "tamanho", "pequeno", "grande", "cabe", "capacidade",
-        "尺寸", "大小", "size", "small", "large",
+        "tamanho",
+        "pequeno",
+        "grande",
+        "cabe",
+        "capacidade",
+        "尺寸",
+        "大小",
+        "size",
+        "small",
+        "large",
     ),
     "物流时效": (
-        "entrega", "atraso", "demorou", "chegou", "prazo",
-        "物流", "发货", "delivery", "late", "shipping",
+        "entrega",
+        "atraso",
+        "demorou",
+        "chegou",
+        "prazo",
+        "物流",
+        "发货",
+        "delivery",
+        "late",
+        "shipping",
     ),
     "描述不符": (
-        "não é como", "diferente", "anúncio", "foto", "esperava",
-        "描述", "不符", "not as described", "different", "photo",
+        "não é como",
+        "diferente",
+        "anúncio",
+        "foto",
+        "esperava",
+        "描述",
+        "不符",
+        "not as described",
+        "different",
+        "photo",
     ),
     "包装破损": (
-        "embalagem", "amassado", "caixa", "quebrado",
-        "包装", "破损", "packaging", "box", "dented",
+        "embalagem",
+        "amassado",
+        "caixa",
+        "quebrado",
+        "包装",
+        "破损",
+        "packaging",
+        "box",
+        "dented",
     ),
     "使用难度": (
-        "instrução", "manual", "difícil", "não entendi",
-        "安装", "说明书", "instruction", "hard", "manual",
+        "instrução",
+        "manual",
+        "difícil",
+        "não entendi",
+        "安装",
+        "说明书",
+        "instruction",
+        "hard",
+        "manual",
     ),
     "电池续航": (
-        "bateria", "carrega", "autonomia", "dura",
-        "电池", "续航", "battery", "charge", "lasts",
+        "bateria",
+        "carrega",
+        "autonomia",
+        "dura",
+        "电池",
+        "续航",
+        "battery",
+        "charge",
+        "lasts",
     ),
     "客服售后": (
-        "atendimento", "suporte", "resposta", "devolução",
-        "客服", "售后", "support", "refund", "return",
+        "atendimento",
+        "suporte",
+        "resposta",
+        "devolução",
+        "客服",
+        "售后",
+        "support",
+        "refund",
+        "return",
     ),
 }
 
@@ -160,9 +222,7 @@ def review_stats(a: ReviewStatsArgs) -> dict[str, Any]:
         "misunderstanding_rate": _rate(misunderstanding_negative, negative_count),
     }
 
-    top_praise = _top_categories(
-        [hits for review, hits in classified if review.rating >= POSITIVE_MIN_RATING]
-    )
+    top_praise = _top_categories([hits for review, hits in classified if review.rating >= POSITIVE_MIN_RATING])
     top_complaint = _top_categories([hits for _, hits in negative])
 
     # ---- 变体维度：数量 / 均分 / 负评数，按数量降序保证稳定 ----
@@ -191,8 +251,7 @@ def review_stats(a: ReviewStatsArgs) -> dict[str, Any]:
     ]
     quote_pool.sort(key=lambda item: (-item[1].helpful, item[1].rating, item[0]))
     sample_quotes = [
-        {"rating": review.rating, "text": _truncate(review.text.strip())}
-        for _, review in quote_pool[:QUOTE_LIMIT]
+        {"rating": review.rating, "text": _truncate(review.text.strip())} for _, review in quote_pool[:QUOTE_LIMIT]
     ]
 
     return {

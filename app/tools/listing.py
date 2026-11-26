@@ -52,9 +52,7 @@ NEGATIVE_TERMS: tuple[str, ...] = (
 )
 
 # 用词边界匹配，避免 "usado" 误伤 "usador" 这类长词
-_NEGATIVE_PATTERN = re.compile(
-    r"(?<!\w)(?:" + "|".join(re.escape(_fold(term)) for term in NEGATIVE_TERMS) + r")(?!\w)"
-)
+_NEGATIVE_PATTERN = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(_fold(term)) for term in NEGATIVE_TERMS) + r")(?!\w)")
 
 
 def _is_symbol_char(ch: str) -> bool:
@@ -92,8 +90,7 @@ class TitleLintArgs(BaseModel):
 
 @tool(
     "title_lint",
-    "校验标题字符上限、前 30 字符关键词、词堆砌、平台禁用词、夸大词、全大写与符号滥用，"
-    "返回逐项 checks 与总 passed。",
+    "校验标题字符上限、前 30 字符关键词、词堆砌、平台禁用词、夸大词、全大写与符号滥用，返回逐项 checks 与总 passed。",
     TitleLintArgs,
     tags=("03",),
 )
@@ -290,9 +287,7 @@ def spec_consistency(a: SpecConsistencyArgs) -> dict[str, Any]:
             traced += 1
             fact_value = "" if facts[key] is None else str(facts[key])
             if not _same_value(spec_value, fact_value):
-                issues.append(
-                    {"name": name, "spec_value": spec_value, "fact_value": fact_value, "type": "mismatch"}
-                )
+                issues.append({"name": name, "spec_value": spec_value, "fact_value": fact_value, "type": "mismatch"})
             continue
 
         if source_key == "derived":
@@ -323,8 +318,7 @@ class KeywordClassifyArgs(BaseModel):
 
 @tool(
     "keyword_classify",
-    "关键词去重并按词数分层为 primary / long_tail / negative（否定意图词单独隔离），"
-    "返回各层计数与去重后总数。",
+    "关键词去重并按词数分层为 primary / long_tail / negative（否定意图词单独隔离），返回各层计数与去重后总数。",
     KeywordClassifyArgs,
     tags=("03",),
 )

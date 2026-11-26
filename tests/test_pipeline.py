@@ -90,7 +90,9 @@ def test_approval_publishes_pack() -> None:
 
 def test_contract_failure_marks_run_failed() -> None:
     with session_scope() as db:
-        project = Project(name="缺数据项目", category="X", platform="shopee", brief={**SCOOTER_BRIEF, "competitor_rows": []})
+        project = Project(
+            name="缺数据项目", category="X", platform="shopee", brief={**SCOOTER_BRIEF, "competitor_rows": []}
+        )
         db.add(project)
         db.flush()
         db.expunge(project)
@@ -131,7 +133,9 @@ def test_closed_loop_produces_feedback_and_retest() -> None:
         assert feedback, "诊断必须产生回流事件"
         assert {f.target_agent for f in feedback} <= {"03_listing_creative", "04_product_image"}
         versions = db.scalars(
-            select(Artifact).where(Artifact.project_id == project.id, Artifact.kind == "listing_pack").order_by(Artifact.version)
+            select(Artifact)
+            .where(Artifact.project_id == project.id, Artifact.kind == "listing_pack")
+            .order_by(Artifact.version)
         ).all()
         assert len(versions) == 2, "闭环应产出 v2"
         assert versions[0].status == "superseded"

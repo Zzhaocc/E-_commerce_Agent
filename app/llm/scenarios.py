@@ -39,7 +39,8 @@ def build_market(payload: dict[str, Any]) -> dict[str, Any]:
         f"p25–p75 区间 {money(m['price_band']['p25'], m['currency'])}–{money(m['price_band']['p75'], m['currency'])}",
     ]
     if m.get("avg_rating") is not None:
-        reasons.append(f"竞品均分 {m['avg_rating']:.2f}，评论池 {m['review_pool']:,} 条，说明口碑门槛{'高' if m['avg_rating'] >= 4.5 else '中等'}")
+        reputation = "高" if m["avg_rating"] >= 4.5 else "中等"
+        reasons.append(f"竞品均分 {m['avg_rating']:.2f}，评论池 {m['review_pool']:,} 条，说明口碑门槛{reputation}")
 
     band = m["price_band"]
     rationale = (
@@ -60,7 +61,8 @@ def build_market(payload: dict[str, Any]) -> dict[str, Any]:
         top = config_matrix[0]
         recommended = top["combo"]
         opportunity.append(
-            f"配置组合「{top['combo']}」占销量 {top['share']:.0%}，均价 {money(top['avg_price'], m['currency'])}，可作为主推配置"
+            f"配置组合「{top['combo']}」占销量 {top['share']:.0%}，"
+            f"均价 {money(top['avg_price'], m['currency'])}，可作为主推配置"
         )
     else:
         recommended = "按目标价反推配置，先上单品验证"

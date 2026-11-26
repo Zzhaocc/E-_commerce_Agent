@@ -9,6 +9,7 @@ LLM 输出"看起来对"不算数：标题字符、参数溯源、图片像素�
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -47,7 +48,11 @@ def _gate_listing(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -
     title = output.get("title") or {}
     text = title.get("text", "")
 
-    lint = _tool(out, "title_lint", {"text": text, "platform": platform, "keywords": (output.get("keyword_map") or {}).get("primary", [])[:3]})
+    lint = _tool(
+        out,
+        "title_lint",
+        {"text": text, "platform": platform, "keywords": (output.get("keyword_map") or {}).get("primary", [])[:3]},
+    )
     if lint:
         if not lint.get("within_limit", True) and lint.get("limit"):
             limit = int(lint["limit"])
@@ -55,8 +60,21 @@ def _gate_listing(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -
             if " " in cut:
                 cut = cut[: cut.rfind(" ")].rstrip(" -|,")
             title["text"] = cut
-            out.guard("title_over_limit", "repair", f"标题 {len(text)} 字符超过上限 {limit}，已按词边界截断到 {len(cut)}")
-            lint = _tool(out, "title_lint", {"text": cut, "platform": platform, "keywords": (output.get("keyword_map") or {}).get("primary", [])[:3]}) or lint
+            out.guard(
+                "title_over_limit", "repair", f"标题 {len(text)} 字符超过上限 {limit}，已按词边界截断到 {len(cut)}"
+            )
+            lint = (
+                _tool(
+                    out,
+                    "title_lint",
+                    {
+                        "text": cut,
+                        "platform": platform,
+                        "keywords": (output.get("keyword_map") or {}).get("primary", [])[:3],
+                    },
+                )
+                or lint
+            )
         title["chars"] = len(title["text"])
         title["limit"] = int(lint.get("limit") or title.get("limit") or 0)
         title["head30"] = title["text"][:30]
@@ -79,7 +97,9 @@ def _gate_listing(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -
 
         compliance = output.setdefault("compliance", {})
         compliance["blocked_terms"] = lint.get("banned_hits", [])
-        compliance["passed"] = (not lint.get("banned_hits")) and bool(lint.get("within_limit", True)) and not out.blocked
+        compliance["passed"] = (
+            (not lint.get("banned_hits")) and bool(lint.get("within_limit", True)) and not out.blocked
+        )
 
     facts = ctx.brief.get("facts") or {}
     cons = _tool(out, "spec_consistency", {"specs": output.get("specs", []), "facts": facts})
@@ -92,7 +112,11 @@ def _gate_listing(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -
         )
         for issue in cons.get("issues", []):
             severity = "block" if issue["type"] == "mismatch" else "warn"
-            out.guard(f"spec_{issue['type']}", severity, f"{issue['name']}：投稿 {issue['spec_value']} vs 事实 {issue.get('fact_value')}")
+            out.guard(
+                f"spec_{issue['type']}",
+                severity,
+                f"{issue['name']}：投稿 {issue['spec_value']} vs 事实 {issue.get('fact_value')}",
+            )
 
     output["self_check"] = out.checks
     if out.blocked:
@@ -106,7 +130,13 @@ def _gate_image(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -> 
     img = _tool(
         out,
         "check_main_image",
-        {"declared_width": size, "declared_height": size, "platform": platform, "background": "white", "overlay_text_chars": 0},
+        {
+            "declared_width": size,
+            "declared_height": size,
+            "platform": platform,
+            "background": "white",
+            "overlay_text_chars": 0,
+        },
     )
     if img:
         for item in img.get("checks", []):
@@ -134,7 +164,9 @@ def _gate_image(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -> 
             out.guard("main_image_text", "repair", "主图不允许叠加文字，已清空")
 
     # 先修复再判定：能自动修的，落库时应是"已通过"
-    out.check("image:overlay_len", "文字叠加 ≤16 字符", True, f"自动截断 {len(long_texts)} 处" if long_texts else "全部合规")
+    out.check(
+        "image:overlay_len", "文字叠加 ≤16 字符", True, f"自动截断 {len(long_texts)} 处" if long_texts else "全部合规"
+    )
     if long_texts:
         out.guard("overlay_too_long", "repair", f"第 {[s for s, _ in long_texts]} 张文案过长，已按词边界截断")
 
@@ -182,7 +214,8 @@ def _gate_market(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) ->
     out.check(
         "market:band_order",
         "价格带次序正确",
-        band.get("valley_low", 0) <= band.get("median", 0) <= band.get("p75", 0) or band.get("valley_low", 0) <= band.get("valley_high", 0),
+        band.get("valley_low", 0) <= band.get("median", 0) <= band.get("p75", 0)
+        or band.get("valley_low", 0) <= band.get("valley_high", 0),
         f"波谷 {band.get('valley_low')}-{band.get('valley_high')}，中位 {band.get('median')}",
     )
     shares = [c.get("share", 0) for c in output.get("config_matrix", [])]
@@ -197,7 +230,12 @@ def _gate_strategy(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) 
     roles = output.get("sku_roles") or []
     out.check("strategy:sku_count", "SKU 四角色齐全", len(roles) == 4, f"实际 {len(roles)} 个")
     role_names = {r.get("role") for r in roles}
-    out.check("strategy:sku_roles", "四角色不重复", role_names == {"引流款", "主推款", "利润款", "形象款"}, str(sorted(role_names)))
+    out.check(
+        "strategy:sku_roles",
+        "四角色不重复",
+        role_names == {"引流款", "主推款", "利润款", "形象款"},
+        str(sorted(role_names)),
+    )
     prices = [r.get("price", 0) for r in roles]
     out.check("strategy:price_order", "价格阶梯递增", prices == sorted(prices), f"{prices}")
     pricing = output.get("pricing") or {}
@@ -220,7 +258,6 @@ def _gate_strategy(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) 
 def _gate_ads(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -> None:
     f = output.get("funnel") or {}
     be = output.get("breakeven") or {}
-    import math
 
     def close(a: float, b: float, tol: float = 0.02) -> bool:
         if b == 0:
@@ -230,9 +267,15 @@ def _gate_ads(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) -> No
     ctr = f["clicks"] / f["impressions"] if f.get("impressions") else 0
     cvr = f["orders"] / f["clicks"] if f.get("clicks") else 0
     roas = f["revenue"] / f["spend"] if f.get("spend") else 0
-    out.check("ads:ctr_math", "CTR 与原始数据一致", close(f.get("ctr", 0), ctr), f"报告 {f.get('ctr')} / 复算 {ctr:.4f}")
-    out.check("ads:cvr_math", "CVR 与原始数据一致", close(f.get("cvr", 0), cvr), f"报告 {f.get('cvr')} / 复算 {cvr:.4f}")
-    out.check("ads:roas_math", "ROAS 与原始数据一致", close(f.get("roas", 0), roas), f"报告 {f.get('roas')} / 复算 {roas:.4f}")
+    out.check(
+        "ads:ctr_math", "CTR 与原始数据一致", close(f.get("ctr", 0), ctr), f"报告 {f.get('ctr')} / 复算 {ctr:.4f}"
+    )
+    out.check(
+        "ads:cvr_math", "CVR 与原始数据一致", close(f.get("cvr", 0), cvr), f"报告 {f.get('cvr')} / 复算 {cvr:.4f}"
+    )
+    out.check(
+        "ads:roas_math", "ROAS 与原始数据一致", close(f.get("roas", 0), roas), f"报告 {f.get('roas')} / 复算 {roas:.4f}"
+    )
     out.check("ads:breakeven_present", "盈亏线已核算", be.get("roas_min", 0) > 0, f"ROAS 下限 {be.get('roas_min')}")
     if f.get("roas", 0) < be.get("roas_min", 0):
         p0 = [a for a in output.get("actions", []) if a.get("priority") == "P0"]
@@ -250,10 +293,23 @@ def _gate_review(out: GateOutcome, output: dict[str, Any], ctx: AgentContext) ->
     a = output.get("attribution") or {}
     total = a.get("total", 0)
     counts = a.get("counts") or {}
-    out.check("review:total_matches", "样本数与输入一致", total == len(ctx.brief.get("reviews") or []), f"归因 {total} / 输入 {len(ctx.brief.get('reviews') or [])}")
-    out.check("review:rate_range", "比率在 0-1", all(0 <= float(a.get(k, 0)) <= 1 for k in ("negative_rate", "fixable_rate", "misunderstanding_rate")))
-    out.check("review:misunderstood_le_fixable", "误解率 ≤ 可修复率", float(a.get("misunderstanding_rate", 0)) <= float(a.get("fixable_rate", 0)) + 1e-9,
-              f"误解 {a.get('misunderstanding_rate')} / 可修复 {a.get('fixable_rate')}")
+    out.check(
+        "review:total_matches",
+        "样本数与输入一致",
+        total == len(ctx.brief.get("reviews") or []),
+        f"归因 {total} / 输入 {len(ctx.brief.get('reviews') or [])}",
+    )
+    out.check(
+        "review:rate_range",
+        "比率在 0-1",
+        all(0 <= float(a.get(k, 0)) <= 1 for k in ("negative_rate", "fixable_rate", "misunderstanding_rate")),
+    )
+    out.check(
+        "review:misunderstood_le_fixable",
+        "误解率 ≤ 可修复率",
+        float(a.get("misunderstanding_rate", 0)) <= float(a.get("fixable_rate", 0)) + 1e-9,
+        f"误解 {a.get('misunderstanding_rate')} / 可修复 {a.get('fixable_rate')}",
+    )
     out.check("review:counts_have_keys", "分类维度齐全", len(counts) >= 8, f"{len(counts)} 类")
     if not output.get("listing_patches"):
         out.guard("no_patch", "warn", "未产出详情页修补建议")

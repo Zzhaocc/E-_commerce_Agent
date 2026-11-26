@@ -70,7 +70,7 @@ def video_timing(a: VideoTimingArgs) -> dict[str, Any]:
 
     gaps: list[dict[str, Any]] = []
     overlaps: list[dict[str, Any]] = []
-    for previous, current in zip(parsed, parsed[1:]):
+    for previous, current in zip(parsed, parsed[1:], strict=False):
         delta = current["start"] - previous["end"]
         if delta > _TOLERANCE + _EPSILON:
             gaps.append(
@@ -146,19 +146,13 @@ def video_timing(a: VideoTimingArgs) -> dict[str, Any]:
             "name": "字幕阅读速度",
             "passed": not cps_issues,
             "detail": f"平均 {avg_cps} cps（上限 {a.max_cps:g}）"
-            + (
-                ""
-                if not cps_issues
-                else "，超标：" + ", ".join(f"镜{i['shot']} {i['cps']}cps" for i in cps_issues)
-            ),
+            + ("" if not cps_issues else "，超标：" + ", ".join(f"镜{i['shot']} {i['cps']}cps" for i in cps_issues)),
         },
         {
             "id": "hook",
             "name": "前 3 秒钩子",
             "passed": hook_ok,
-            "detail": "首镜有字幕且 3s 内开始"
-            if hook_ok
-            else "首镜缺少字幕或晚于 3s 才开始（完播率风险）",
+            "detail": "首镜有字幕且 3s 内开始" if hook_ok else "首镜缺少字幕或晚于 3s 才开始（完播率风险）",
         },
     ]
 

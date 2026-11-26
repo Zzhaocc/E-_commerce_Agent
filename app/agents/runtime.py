@@ -44,10 +44,10 @@ def _parse_json_object(text: str) -> dict[str, Any]:
         raw = raw.strip()
     try:
         data = json.loads(raw)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as exc:
         start, end = raw.find("{"), raw.rfind("}")
         if start == -1 or end <= start:
-            raise AgentRunError("runtime", "parse", f"模型输出不是 JSON：{raw[:160]}")
+            raise AgentRunError("runtime", "parse", f"模型输出不是 JSON：{raw[:160]}") from exc
         data = json.loads(raw[start : end + 1])
     if not isinstance(data, dict):
         raise AgentRunError("runtime", "parse", "模型输出的顶层必须是 JSON 对象")
@@ -174,7 +174,10 @@ class AgentRuntime:
                                 {
                                     "id": c.id,
                                     "type": "function",
-                                    "function": {"name": c.name, "arguments": json.dumps(c.arguments, ensure_ascii=False)},
+                                    "function": {
+                                        "name": c.name,
+                                        "arguments": json.dumps(c.arguments, ensure_ascii=False),
+                                    },
                                 }
                                 for c in result.tool_calls
                             ],

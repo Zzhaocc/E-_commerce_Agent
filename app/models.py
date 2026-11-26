@@ -1,6 +1,6 @@
 """持久化模型。
 
-设计要点（面试可讲）：
+设计要点：
 1. Run / StepRun 分离 —— 一次运行有多个 Agent 步骤，步骤级记录才能做 trace、
    断点续跑与成本归因；
 2. Artifact 带 version 与 status —— 闭环迭代不是"覆盖"，而是新版本 supersede 旧版本，
@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,7 +24,7 @@ def new_id(prefix: str) -> str:
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Project(Base):
@@ -41,8 +41,8 @@ class Project(Base):
     brief: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    runs: Mapped[list["Run"]] = relationship(back_populates="project", cascade="all, delete-orphan")
-    artifacts: Mapped[list["Artifact"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    runs: Mapped[list[Run]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    artifacts: Mapped[list[Artifact]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Run(Base):
@@ -53,7 +53,8 @@ class Run(Base):
     id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("run"))
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
     mode: Mapped[str] = mapped_column(String(30), default="full_pipeline")
-    status: Mapped[str] = mapped_column(String(30), default="queued")  # queued|running|awaiting_approval|completed|failed|cancelled
+    # queued | running | awaiting_approval | completed | failed | cancelled
+    status: Mapped[str] = mapped_column(String(30), default="queued")
     stage: Mapped[str] = mapped_column(String(60), default="")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -62,8 +63,8 @@ class Run(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    project: Mapped["Project"] = relationship(back_populates="runs")
-    steps: Mapped[list["StepRun"]] = relationship(
+    project: Mapped[Project] = relationship(back_populates="runs")
+    steps: Mapped[list[StepRun]] = relationship(
         back_populates="run", cascade="all, delete-orphan", order_by="StepRun.seq"
     )
 
@@ -92,7 +93,7 @@ class StepRun(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    run: Mapped["Run"] = relationship(back_populates="steps")
+    run: Mapped[Run] = relationship(back_populates="steps")
 
 
 class Artifact(Base):
@@ -111,7 +112,7 @@ class Artifact(Base):
     content: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    project: Mapped["Project"] = relationship(back_populates="artifacts")
+    project: Mapped[Project] = relationship(back_populates="artifacts")
 
 
 class TraceSpan(Base):
