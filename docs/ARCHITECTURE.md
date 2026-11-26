@@ -1,6 +1,6 @@
 # 架构与设计决策
 
-> 这份文档回答一个问题：**当一个 Agent 要上生产，除了 Prompt 还差什么。**
+> 本文记录分层、运行时、契约、护栏、闭环、可观测与运维边界等设计决策。
 
 ## 1. 目标与非目标
 
@@ -200,7 +200,7 @@ v2 的 `content.applied_feedback` 记录"改了哪条、来自哪条证据"。
 
 ---
 
-## 10. Provider 抽象与 mock 的意义
+## 10. Provider 抽象与离线实现
 
 ```python
 class LLMProvider(Protocol):
@@ -210,7 +210,7 @@ class LLMProvider(Protocol):
 - `openai_compat.py`：标准 `/chat/completions`，支持 function calling 与 JSON 输出；
 - `mock.py`：规则型实现，数值来自真实工具、文案来自商品知识库。
 
-**mock 不是伪造**，它解决三个工程问题：
+离线实现解决三个工程问题：
 
 1. CI 与本地开发环境没有 API key，链路也必须能跑通；
 2. 回归评测需要**确定性基线**，否则每次跑分都在抖；
