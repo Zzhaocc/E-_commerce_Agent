@@ -1,36 +1,64 @@
-# CrossBorderOps · 跨境电商 AI 运营 Agent 平台
+# CrossBorderOps · 跨境电商运营 Agent 平台
 
-> 跨境商品项目的运营流水线：7 个 Agent 串起市场、策略、素材与诊断，产物带契约、护栏与版本。
+> 把商品项目从「能不能做」推进到「可直接交付的素材包」：7 个 Agent、13 个确定性工具、
+> 双契约与三级护栏、版本化闭环。
 
+[![Version](https://img.shields.io/badge/version-0.7.0-blue?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.13-3776AB?style=flat-square)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square)](https://fastapi.tiangolo.com/)
-[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square)](https://docs.pydantic.dev/)
 [![CI](https://github.com/Zzhaocc/E-_commerce_Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Zzhaocc/E-_commerce_Agent/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen?style=flat-square)]()
-[![Eval](https://img.shields.io/badge/golden%20eval-10%2F10-brightgreen?style=flat-square)]()
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
 
 ---
 
-## 这是什么
+## 产品定位
 
-CrossBorderOps 是服务端的跨境电商运营 Agent 平台：输入一个商品项目（商品事实、成本结构、竞品导出、
-广告与评论数据），输出一套可直接交付的素材包。
+面向**跨境运营团队与代运营服务商**的运营自动化平台。它不是一个文案生成器，而是一条有输入契约、
+有质量闸门、有版本记录的运营流水线：每个商品项目进来，出去的是一套可以交付给平台的素材与一份可追溯的诊断记录。
 
-平台由 7 个 Agent 串联：市场分析 → 产品策略 → Listing / 主图 / 短视频 → 广告与评论诊断，
-每一步都跑在同一个运行时上 ——
+| 维度 | 说明 |
+|---|---|
+| 目标用户 | 跨境电商运营团队、代运营服务商、品牌出海团队 |
+| 核心价值 | 把「数字口径」和「格式合规」从人的经验变成可执行、可回归的代码约束 |
+| 交付形态 | 服务端应用 + Web 控制台 + REST API；Docker / Compose / 裸机三种部署 |
+| 业务范围 | 市场进入判断、定价与 SKU 结构、Listing 与图文素材、广告与评论诊断回流 |
+| 不覆盖 | 平台 API 直连、真实出图/出视频、多租户与计费（见 [Roadmap](#roadmap)） |
 
-- **7 个 Agent**：职责与产物固定，输入输出都有 JSON Schema 契约；
-- **13 个确定性工具**：CR4、HHI、价格带波谷、盈亏价、券余量、字符 / 像素 / 时序校验全部由脚本算，
-  模型只做解读；
-- **三级护栏**：能自动修的修（repair），该拦的拦（block），存疑的只告警（warn）；
-- **版本化闭环**：广告与评论诊断生成可追溯的 FeedbackEvent，驱动素材出新版本，再用第二窗口数据复测。
-
-默认不需要 API key：内置规则型模型提供方；接真实模型只改环境变量。
+一条流水线走完，产出六类资产：市场报告、策略书、Listing 包、图片包、视频包、发布包；
+广告与评论诊断会生成可追溯的回流事件，驱动素材迭代出新版本。
 
 ---
 
-## 30 秒跑起来
+## 能力矩阵
+
+| 环节 | 能力 | 确定性工具 | 产物 |
+|---|---|---|---|
+| 01 市场分析 | 类目可否进入、从哪个价格带切入 | `market_metrics` `platform_rules` | 市场报告 |
+| 02 产品策略 | 定位、唯一卖点、定价、SKU 四角色 | `unit_economics` `sku_ladder` | 策略书 |
+| 03 Listing 创意 | 关键词分层、葡语标题、五点、详情页 | `title_lint` `spec_consistency` | Listing 包 |
+| 04 主图/详情图 | 9 图规划、出图 Prompt、像素合规 | `check_main_image` | 图片包 |
+| 05 短视频 | 钩子、分镜、口播、字幕时长校验 | `video_timing` | 视频包 |
+| 06 广告优化 | 漏斗诊断、盈亏线、P0/P1/P2 动作 | `ad_metrics` `budget_realloc` | 诊断计划 |
+| 07 评论分析 | 八类归因、可修复率、页面修补 | `review_stats` `selling_point_rank` | 评论洞察 |
+| 质量闸门 | 输入/输出契约、三级护栏、逐项自检 | 全部工具 | checks + guardrails |
+| 闭环迭代 | 诊断 → 回流事件 → 素材 v2 → 第二窗口复测 | 复用上述工具 | 版本化产物 |
+
+**闭环路径**（与一次性生成的分界）：
+
+```text
+01 市场 ──► 02 策略 ──► 03 ∥ 04 ∥ 05 ──► 人工审批 ──► 发布包
+                            ▲                              │
+                            │                      06 广告诊断
+                            │                      07 评论归因
+                            └──── FeedbackEvent ◄──────────┘
+                                  （P0/P1 分级、可追溯）
+                                        │
+                                  素材 v2 + 第二窗口复测
+```
+
+---
+
+## 快速开始
 
 不需要 API key。
 
@@ -55,7 +83,7 @@ python -m uvicorn app.main:app --port 8000
 
 Windows 也可以直接双击 `start.bat`，或运行 `.\scripts\run.ps1 -Port 8000`。
 
-### 不启服务也能验证
+### 命令行验证
 
 ```bash
 python scripts/demo.py      # 端到端跑完整链路，打印每一步的自检与成本
@@ -78,24 +106,6 @@ python scripts/demo.py      # 端到端跑完整链路，打印每一步的自�
 | ![广告](docs/screenshots/console-ads.jpg) | ![评测](docs/screenshots/console-eval.jpg) |
 
 更多截图见 [`docs/screenshots/`](docs/screenshots/)：策略、Listing、9 图、视频、评论、Trace、发布包、平台指标。
-
----
-
-## 它解决什么问题
-
-同样的运营 SOP，不同的人执行，结果差异很大，主要差在三件事上：
-
-1. **数字** —— 价格带、净利率、可承受 CPA 靠经验估，事后无法复核；
-2. **格式** —— 标题超字符、参数与实物不符、主图叠满文字，只能人工逐条检查；
-3. **迭代** —— 一次生成的素材不会因为真实广告与评论数据变准。
-
-对应的三个设计：
-
-| 问题 | 设计 |
-|---|---|
-| 数字靠感觉 | **确定性优先**：先跑脚本算，Agent 只负责解读，`evidence` 里的数字禁止改写 |
-| 格式不可控 | **双契约**：输入缺字段直接 422，输出多字段校验失败；再加事后护栏自动修复或阻塞 |
-| 改完没用 | **闭环回流**：06/07 的诊断变成可追溯的 FeedbackEvent，驱动 03/04 出新版本，并用第二窗口数据复测 |
 
 ---
 
@@ -127,8 +137,6 @@ python scripts/demo.py      # 端到端跑完整链路，打印每一步的自�
                                      └─────────────────────┘
 ```
 
-分层、状态机、契约、护栏、闭环与取舍详见 [架构与设计决策](docs/ARCHITECTURE.md)。
-
 ### 一次 Agent 调用的完整轨迹
 
 ```text
@@ -150,37 +158,11 @@ LLM + function calling 循环 ── 上限 3 轮，防死循环烧钱
 落库 ── StepRun + Artifact(version) + TraceSpan + 运行指标
 ```
 
----
-
-## 7 个 Agent
-
-| # | Agent | 职责 | 调用的确定性工具 | 产物 |
-|---|---|---|---|---|
-| 01 | 市场分析 | 能不能进、从哪个价格带进 | `market_metrics` `platform_rules` | 市场报告 |
-| 02 | 产品策略 | 定位、唯一卖点、定价、SKU 四角色 | `unit_economics` `sku_ladder` | 策略书 |
-| 03 | Listing 创意 | 关键词分层 → 葡语标题 → 五点 → 详情页 | `title_lint` `spec_consistency` | Listing 包 |
-| 04 | 主图/详情图 | 9 图规划 + 出图 Prompt + 像素合规 | `check_main_image` | 图片包 |
-| 05 | 短视频 | 钩子 → 分镜 → 口播 → 字幕时长校验 | `video_timing` | 视频包 |
-| 06 | 广告优化 | 漏斗诊断 + 盈亏线 + P0/P1/P2 动作 | `ad_metrics` `budget_realloc` | 诊断计划 |
-| 07 | 评论分析 | 八类归因 → 可修复率 → 页面修补 | `review_stats` `selling_point_rank` | 评论洞察 |
-
-**闭环**（这是和"一次性生成工具"的分界线）：
-
-```text
-01 市场 ──► 02 策略 ──► 03 ∥ 04 ∥ 05 ──► 人工审批 ──► 发布包
-                            ▲                              │
-                            │                      06 广告诊断
-                            │                      07 评论归因
-                            └──── FeedbackEvent ◄──────────┘
-                                  （P0/P1 分级、可追溯）
-                                        │
-                                  素材 v2 + 第二窗口复测
-                                  ROAS 2.96 → 6.90 ✅
-```
+分层、状态机、契约细节见 [架构与设计决策](docs/ARCHITECTURE.md)。
 
 ---
 
-## 设计决策
+## 关键设计
 
 ### 1. 双契约：格式由代码约束
 
@@ -194,9 +176,9 @@ class MarketOutput(StrictModel):  # extra="forbid"
     confidence: float = Field(ge=0, le=1)
 ```
 
-- 输入侧：缺字段 → `422`，**宁可失败，不许编造**；
-- 输出侧：多一个字段就校验失败 → 自动带错误信息重试一次；
-- 枚举/范围约束把"看起来对"的幻觉挡在落库之前。
+- 输入侧：缺字段 → `422`，数据不足不开工；
+- 输出侧：多一个字段即校验失败 → 自动带错误信息重试一次；
+- 枚举/范围约束把越界值挡在落库之前。
 
 ### 2. 数字交给脚本，模型只做解读
 
@@ -211,7 +193,7 @@ net = P·(1 − commission − payment − ad_rate − coupon) − (cogs + freig
 
 价格带波谷由脚本计算：在 p25–p75 内找 **SKU 密度局部最低且仍有成交** 的带宽。
 
-### 3. 护栏分三级，能修的不阻塞，该挡的必须挡
+### 3. 三级护栏
 
 | 级别 | 例子 | 行为 |
 |---|---|---|
@@ -219,23 +201,22 @@ net = P·(1 − commission − payment − ad_rate − coupon) − (cogs + freig
 | `block` | 标题命中 `original` / `melhor do mundo` | `compliance.passed=false`，**禁止生成发布包** |
 | `warn` | 参数溯源率 80%、视频字幕语速偏快 | 记录并放行，进入人工审批视野 |
 
-关键点：护栏是**代码**，不是 Prompt 里的一句"请注意合规"。Prompt 会被模型忽略，代码不会。
+护栏是代码，不依赖 Prompt 里的一句「请注意合规」。
 
-### 4. 闭环是版本化的，不是覆盖
+### 4. 版本化闭环
 
 `Artifact` 带 `version` 与 `status`（draft / approved / superseded）。
 闭环时旧的 Listing 变 `superseded`，新的 v2 记录 `applied_feedback`：
 改了哪一条、来自哪个 Agent 的哪条证据，全部可回溯。
 
-### 5. 可观测与评测是"能改"的前提
+### 5. 可观测与评测
 
 - 每次 LLM / 工具 / 护栏调用都落 `TraceSpan`，带 token、成本、延迟；
 - 结构化日志（`text` / `json`）带 `request_id`，响应头 `X-Request-ID` 与日志可对齐；
 - 运行级指标：步骤数、checks 通过率、护栏分布、wall time；
-- golden eval 10 条，其中 2 条是**负向用例**：缺竞品数据、费率不可达时必须失败。
-  改 Prompt / 换模型先跑评测，通过率掉了就不合并。
+- golden eval 10 条，其中 2 条是负向用例：缺竞品数据、费率不可达时必须失败。
 
-更多取舍与"为什么不用 LangGraph""怎么防死循环"等问题见 [设计问答](docs/DESIGN_FAQ.md)。
+更多取舍见 [设计问答](docs/DESIGN_FAQ.md)。
 
 ---
 
@@ -256,7 +237,7 @@ net = P·(1 − commission − payment − ad_rate − coupon) − (cogs + freig
 
 ---
 
-## API 示例
+## API 与集成
 
 完整接口见 [`docs/API.md`](docs/API.md)，`examples/` 下是可直接执行的 JSON / `.http`。
 
@@ -289,12 +270,7 @@ curl -X POST http://127.0.0.1:8000/api/tools/unit_economics/invoke \
 
 所有错误响应统一为 `{"detail": ..., "request_id": ...}`，排查时按 `request_id` 检索日志。
 
----
-
-## 接入真实模型
-
-默认 `mock` provider 是**规则型 Agent**：数值来自真实工具、文案来自商品知识库，
-用于无 key 运行与回归基线。接真实模型只改环境变量：
+### 接入真实模型
 
 ```bash
 LLM_PROVIDER=openai_compatible
@@ -304,44 +280,9 @@ LLM_MODEL=deepseek-chat
 ```
 
 `app/llm/openai_compat.py` 是标准的 `/chat/completions` 实现，DeepSeek / Qwen / vLLM /
-Ollama / 任何中转网关都能接。**换模型不动业务代码**，因为所有 Agent 只依赖 `chat()` 一个方法。
+Ollama 等 OpenAI 兼容网关都可以接入。所有 Agent 只依赖 `chat()` 一个方法，换模型不动业务代码。
 
 配置写错时不会静默降级：`/api/health` 会返回 `provider_error` 说明原因。
-
----
-
-## 目录结构
-
-```text
-E-_commerce_Agent/
-├── app/
-│   ├── main.py                  # 应用装配、中间件、启动自检、崩溃恢复
-│   ├── config.py                # 环境变量配置
-│   ├── logging.py               # 结构化日志 + request_id 注入
-│   ├── middleware.py            # 请求关联 ID、访问日志、安全响应头
-│   ├── errors.py                # 统一错误响应
-│   ├── db.py / models.py        # SQLAlchemy 模型（Run/StepRun/Artifact/TraceSpan/FeedbackEvent）
-│   ├── api/                     # REST 路由 + 请求模型
-│   ├── agents/
-│   │   ├── contracts.py         # 7 个 Agent 的输入/输出契约
-│   │   ├── prompts.py           # 系统 Prompt（五段式）
-│   │   ├── registry.py          # 输入适配 + 证据工具 + 工具白名单
-│   │   ├── runtime.py           # 契约→证据→工具循环→校验→护栏
-│   │   └── gates.py             # 三级护栏
-│   ├── tools/                   # 13 个确定性工具
-│   ├── llm/                     # Provider 抽象、mock、OpenAI 兼容、商品知识库
-│   ├── workflow/engine.py       # 状态机、并行创意簇、审批、闭环、版本化
-│   ├── eval/runner.py           # golden 评测（含负向用例）
-│   └── seed.py                  # 两个示例项目（含广告/评论/复测数据）
-├── web/                         # 零依赖单页控制台
-├── tests/                       # 66 个测试
-├── examples/                    # 可直接执行的请求示例
-├── scripts/                     # demo.py / smoke_http.py / run.ps1
-├── docs/                        # 架构、API、设计问答、运维手册
-├── Dockerfile                   # 多阶段构建，非 root 运行
-├── docker-compose.yml
-└── Makefile                     # install / run / test / lint / demo / docker-*
-```
 
 ---
 
@@ -359,40 +300,46 @@ make docker-build    # 构建镜像
 - **探针**：`/api/health`（存活，不查库）、`/api/ready`（就绪，查库与注册表）；
 - **日志**：`LOG_FORMAT=json` 接采集平台，按 `request_id` 关联一次请求；
 - **备份**：`sqlite3 data/studio.db ".backup ..."`，恢复步骤见运维手册；
-- **扩容**：单机走线程池，多机需要换 PostgreSQL + 任务队列；内置接口不带鉴权，对外必须置于网关之后。
+- **扩容**：单机走线程池，多机需换 PostgreSQL + 任务队列；内置接口不带鉴权，对外须置于网关之后。
 
-完整部署形态、故障排查表与上线检查清单见 [运维手册](docs/OPERATIONS.md)，
-安全边界与漏洞报告流程见 [SECURITY.md](SECURITY.md)。
+部署形态、故障排查表与上线检查清单见 [运维手册](docs/OPERATIONS.md)，
+安全边界与漏洞报告流程见 [SECURITY.md](SECURITY.md)，
+版本策略与发布流程见 [版本与发布](docs/RELEASE.md)。
 
 ---
 
-## 测试与评测
+## 运行指标
 
-```bash
-# 1) 全量测试
-python -m pytest -q
-# 66 passed
+本机实测（mock provider，单机，Python 3.13 / SQLite）：
 
-# 2) 回归评测（含负向用例）
-python -m app.eval.runner
-# 10/10，score 1.0
+| 指标 | 数值 | 测量方式 |
+|---|---|---|
+| 全量流水线耗时 | ~0.1–0.2 s（5 个 Agent，含 3 路并行） | `scripts/demo.py` |
+| 单次流水线 token | ~14.6k | 运行级 `metrics.tokens` |
+| 单次流水线成本 | ~$0.0066（按配置单价） | 运行级 `metrics.cost_usd` |
+| 自检项 | 31 项，31 通过 | `metrics.checks_passed` |
+| 测试 | 66 passed | `pytest` |
+| golden eval | 10/10，score 1.0 | `python -m app.eval.runner` |
 
-# 3) 端到端演示（创建 → 跑流水线 → 审批 → 闭环 → 复测）
-python scripts/demo.py
-```
+数字随机器、依赖版本与文案长度波动，可用 `python scripts/demo.py` 复现。
 
-本机实测（mock provider）：全链路约 0.1–0.2 s、31 项自检全过、单次约 14.6k token / $0.0066。
-数字随机器与依赖版本波动，可直接用 `python scripts/demo.py` 复现。
+---
 
-CI 在 push / PR 时跑 ruff + pytest（3.11 / 3.13）+ golden 评测 + HTTP 冒烟，见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
+## 版本与支持
+
+- **版本号**：语义化版本（`MAJOR.MINOR.PATCH`），当前 `0.7.0`，变更记录见 [CHANGELOG](CHANGELOG.md)；
+- **发布流程**：分支策略、发布检查清单与回滚步骤见 [版本与发布](docs/RELEASE.md)；
+- **质量门禁**：CI 跑 ruff + pytest（3.11 / 3.13）+ golden eval + HTTP 冒烟，见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)；
+- **支持渠道**：缺陷与需求走 [Issues](https://github.com/Zzhaocc/E-_commerce_Agent/issues)，
+  安全问题走 [Security Advisory](SECURITY.md)（不公开披露细节）。
 
 ---
 
 ## 已知边界
 
-- `mock` provider 的文案来自知识库模板，用于保证离线可复现；真实模型下文案质量取决于模型，
-  但契约、护栏、评测、闭环链路完全一致；
-- 不做真实平台 API 对接、真实出图/出视频 —— 只留适配位（见 Roadmap）；
+- `mock` provider 是规则型实现，用于无 key 运行与回归基线；真实模型下文案质量取决于模型，
+  契约、护栏、评测、闭环链路完全一致；
+- 不接通平台 API、不产出真实图片/视频 —— 只留适配位；
 - 内置接口不带鉴权，多租户与权限仍在 Roadmap；
 - SQLite 为单写者，高并发写入需换 PostgreSQL。
 
@@ -400,31 +347,38 @@ CI 在 push / PR 时跑 ruff + pytest（3.11 / 3.13）+ golden 评测 + HTTP 冒
 
 ## Roadmap
 
-| 版本 | 内容 |
-|---|---|
-| v0.7（当前） | 生产化加固：结构化日志与 request_id、统一错误契约、就绪探针、容器化、安全与运维文档 |
-| v0.8 | 平台 API 适配器（Shopee / Mercado Livre 拉数与回写） |
-| v0.9 | 向量记忆：跨项目复用"某个类目的历史诊断" |
-| v1.0 | 批量任务与定时调度（每日自动诊断 → 只把 P0 推到人） |
-| v1.1 | 多租户 + 权限 + PostgreSQL + 对象存储 |
-
-变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+| 版本 | 内容 | 状态 |
+|---|---|---|
+| v0.7 | 生产化加固：结构化日志与 request_id、探针、容器化、运维与安全文档 | 已交付 |
+| v0.8 | 平台 API 适配器（Shopee / Mercado Livre 拉数与回写） | 规划中 |
+| v0.9 | 向量记忆：跨项目复用同类目的历史诊断 | 规划中 |
+| v1.0 | 批量任务与定时调度（每日自动诊断，只把 P0 推给人） | 规划中 |
+| v1.1 | 多租户 + 权限 + PostgreSQL + 对象存储 | 规划中 |
 
 ---
 
 ## 文档
 
-- [架构与设计决策](docs/ARCHITECTURE.md) —— 分层、状态机、契约、护栏、闭环、可观测、安全边界
-- [设计问答](docs/DESIGN_FAQ.md) —— 为什么这么设计、每个取舍的代价
-- [API 参考](docs/API.md) —— 全部端点、错误契约与示例
-- [运维手册](docs/OPERATIONS.md) —— 部署形态、探针、日志排障、备份、扩容、上线清单
-- [安全策略](SECURITY.md) —— 安全边界与漏洞报告流程
-- [贡献指南](CONTRIBUTING.md) —— 本地开发、PR 前必过的检查、如何新增 Agent
+| 文档 | 内容 |
+|---|---|
+| [架构与设计决策](docs/ARCHITECTURE.md) | 分层、状态机、契约、护栏、闭环、可观测、安全边界 |
+| [设计问答](docs/DESIGN_FAQ.md) | 为什么这么设计、每个取舍的代价 |
+| [API 参考](docs/API.md) | 全部端点、错误契约与示例 |
+| [运维手册](docs/OPERATIONS.md) | 部署形态、探针、日志排障、备份、扩容、上线清单 |
+| [版本与发布](docs/RELEASE.md) | 版本策略、分支与合并、发布检查清单、回滚 |
+| [安全策略](SECURITY.md) | 安全边界与漏洞报告流程 |
+| [贡献指南](CONTRIBUTING.md) | 本地开发、PR 前检查、如何新增 Agent |
 
 ---
 
-## 致谢与许可
+## 许可
 
-- 致谢 [AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)：7 个 Agent 的职责划分与业务口径来源；
-- 示例数据为脱敏样本，不含真实店铺、账号与买家信息；
-- MIT License，见 [LICENSE](LICENSE)。
+MIT License，见 [LICENSE](LICENSE)。示例数据为脱敏样本，不含真实店铺、账号与买家信息；
+业务口径来源见文末致谢。
+
+<details>
+<summary>业务口径来源</summary>
+
+7 个 Agent 的职责划分与业务口径来自开源项目
+[AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)。
+</details>
