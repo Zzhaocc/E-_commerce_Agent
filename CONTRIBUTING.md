@@ -6,20 +6,26 @@
 ## 本地开发
 
 ```bash
-pip install -r requirements.txt
-python -m pytest -q            # 57 个测试
+python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+
+python -m pytest -q            # 单元测试（含平台级用例）
+python -m ruff check app tests scripts
 python -m app.eval.runner      # 10 条 golden 评测
 python -m uvicorn app.main:app --port 8000
 ```
 
-默认 `LLM_PROVIDER=mock`，不需要 API key。接入真实模型见 `.env.example`。
+默认 `LLM_PROVIDER=mock`，不需要 API key。接入真实模型见 `.env.example`；
+部署与排障见 [运维手册](docs/OPERATIONS.md)。
 
 ## 提 PR 前必须过
 
-1. `python -m pytest -q` 全绿；
-2. `python -m app.eval.runner` 得分 ≥ 0.9（不允许为了过新用例而放宽旧断言）；
-3. 改了 Prompt / 工具口径，在 PR 描述里写清「改前 vs 改后」的评测差异；
-4. 新增工具必须有单测，且参数模型保持 `extra="forbid"`。
+1. `python -m pytest` 全绿；
+2. `python -m ruff check app tests scripts` 无告警；
+3. `python -m app.eval.runner` 得分 ≥ 0.9（不允许为了过新用例而放宽旧断言）；
+4. 改了 Prompt / 工具口径，在 PR 描述里写清「改前 vs 改后」的评测差异；
+5. 新增工具必须有单测，且参数模型保持 `extra="forbid"`；
+6. 改了对外接口，同步更新 `docs/API.md`；改了部署方式或配置项，同步更新 `.env.example` 与 `docs/OPERATIONS.md`。
 
 ## 新增一个 Agent（四步）
 
@@ -34,8 +40,9 @@ python -m uvicorn app.main:app --port 8000
 
 - 提交案例必须**脱敏**：不含真实店铺名、账号、买家信息、未授权品牌词；
 - 不实现刷单、诱导评价、参数虚标等平台禁止的做法；
-- 平台费率、字符上限等规则以平台后台实时规则为准，本仓库内置的是演示快照。
+- 平台费率、字符上限等规则以平台后台实时规则为准，本仓库内置的是演示快照；
+- 示例数据与文案只用于功能验证，不代表任何真实商品宣传口径。
 
 ## 提交信息
 
-用 `feat:` / `fix:` / `docs:` / `test:` / `refactor:` 前缀，一句话说清改了什么、为什么。
+用 `feat:` / `fix:` / `docs:` / `test:` / `refactor:` / `chore:` 前缀，一句话说清改了什么、为什么。

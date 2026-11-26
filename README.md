@@ -1,15 +1,15 @@
 # CrossBorderOps · 跨境电商 AI 运营 Agent 平台
 
 > 把跨境运营 SOP 里的经验，变成**可运行、可校验、可回流**的 7 个 AI Agent 工作流。
-> 不是 Prompt 合集，是一套能跑起来、能被评测、能被替换模型的工程实现。
+> 不是 Prompt 合集，是一套能跑起来、能被评测、能被替换模型、能被容器化部署的工程实现。
 
-[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square)]()
-[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square)]()
-[![CI](https://github.com/Zzhaocc/-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Zzhaocc/-agent/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-57%20passed-brightgreen?style=flat-square)]()
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.13-3776AB?style=flat-square)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square)](https://fastapi.tiangolo.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square)](https://docs.pydantic.dev/)
+[![CI](https://github.com/Zzhaocc/E-_commerce_Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Zzhaocc/E-_commerce_Agent/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen?style=flat-square)]()
 [![Eval](https://img.shields.io/badge/golden%20eval-10%2F10-brightgreen?style=flat-square)]()
-[![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)]()
+[![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
 
 ---
 
@@ -26,7 +26,7 @@
 | "能算的别让模型猜" 的原则 | 13 个确定性工具（CR4/HHI/价格带波谷/净利率/字符校验/像素校验/时序校验） |
 | 合规红线清单 | 可执行的三级护栏（repair / block / warn），命中即阻塞发布 |
 | 闭环工作流的图 | 真正落地的回流：诊断 → 生成 FeedbackEvent → 素材 v2 → 用第二窗口数据复测 |
-| 手工自检清单 | 57 个自动化测试 + 10 条 golden eval（含"必须失败"的负向用例） |
+| 手工自检清单 | 66 个自动化测试 + 10 条 golden eval（含"必须失败"的负向用例） |
 
 **一句话**：它回答的是"当一个 Agent 要上生产，除了 Prompt 还差什么"。
 
@@ -34,21 +34,39 @@
 
 ## 30 秒跑起来
 
-不需要 API key，不需要 Docker，不需要前端构建。
+不需要 API key。
+
+### Docker（推荐）
 
 ```bash
-cd CrossBorderOps-Agent-Platform
+git clone https://github.com/Zzhaocc/E-_commerce_Agent.git
+cd E-_commerce_Agent
+docker compose up -d --build
+```
+
+打开 <http://127.0.0.1:8000>。数据落在具名卷 `app-data`，`docker compose down` 不会丢。
+
+### 本地
+
+```bash
+git clone https://github.com/Zzhaocc/E-_commerce_Agent.git
+cd E-_commerce_Agent
 pip install -r requirements.txt
 python -m uvicorn app.main:app --port 8000
 ```
 
-打开 <http://127.0.0.1:8000> —— 内置两个演示项目（Shopee 电动滑板车 / Mercado Livre 宠物航空箱），
-点「运行完整流水线」即可看到 7 个 Agent 依次产出市场报告、定价方案、葡语 Listing、9 图规划、短视频脚本。
+Windows 也可以直接双击 `start.bat`，或运行 `.\scripts\run.ps1 -Port 8000`。
+
+### 不启服务也能验证
 
 ```bash
-# 没有浏览器也能验：命令行跑完整链路
-python scripts/demo.py
+python scripts/demo.py      # 端到端跑完整链路，打印每一步的自检与成本
 ```
+
+内置两个示例项目（Shopee 电动滑板车 / Mercado Livre 宠物航空箱），
+点「运行完整流水线」即可看到 7 个 Agent 依次产出市场报告、定价方案、葡语 Listing、9 图规划、短视频脚本。
+
+---
 
 ## 控制台
 
@@ -88,12 +106,13 @@ python scripts/demo.py
 ```text
                     ┌──────────────────── 接入层 ────────────────────┐
                     │  REST /api  ·  Web 控制台  ·  Swagger /docs     │
+                    │  中间件：CORS → X-Request-ID → 安全响应头       │
                     └───────────────────────┬──────────────────────┘
                                             │
         ┌───────────────────────────────────▼───────────────────────────────────┐
         │                         工作流引擎 RunEngine                           │
         │  状态机 queued→running→[awaiting_approval]→completed/failed          │
-        │  四条路径：full_pipeline · creative_only · diagnose · closed_loop     │
+        │  五条路径：full_pipeline · creative_only · single · diagnose · loop  │
         │  断点字段 context / 步骤级 StepRun / 产物版本 Artifact.version        │
         └───────┬───────────────────────────────┬───────────────────────────────┘
                 │                               │
@@ -105,10 +124,12 @@ python scripts/demo.py
                 │
      ┌──────────▼──────────┐         ┌─────────────────────┐
      │   LLM Provider 层    │         │   可观测 / 评测      │
-     │ mock / openai 兼容   │         │ TraceSpan · 成本     │
-     └─────────────────────┘         │ 57 tests · golden   │
+     │ mock / openai 兼容   │         │ TraceSpan · 结构化日志│
+     └─────────────────────┘         │ 66 tests · golden   │
                                      └─────────────────────┘
 ```
+
+分层、状态机、契约、护栏、闭环与取舍详见 [架构与设计决策](docs/ARCHITECTURE.md)。
 
 ### 一次 Agent 调用的完整轨迹
 
@@ -161,16 +182,17 @@ LLM + function calling 循环 ── 上限 3 轮，防死循环烧钱
 
 ---
 
-## 五个能讲的设计决策
+## 五个关键设计决策
 
 ### 1. 双契约，而不是"让模型尽量按格式输出"
 
 ```python
-class MarketInput(InputModel):          # extra="allow"
-    competitor_rows: list[CompetitorRow] = Field(min_length=3)   # 少于 3 条直接拒绝
+class MarketInput(InputModel):  # extra="allow"
+    competitor_rows: list[CompetitorRow] = Field(min_length=3)  # 少于 3 条直接拒绝
 
-class MarketOutput(StrictModel):        # extra="forbid"
-    precheck: PrecheckOut               # verdict 只能是 GO/CAUTION/NO_GO
+
+class MarketOutput(StrictModel):  # extra="forbid"
+    precheck: PrecheckOut  # verdict 只能是 GO/CAUTION/NO_GO
     confidence: float = Field(ge=0, le=1)
 ```
 
@@ -180,7 +202,7 @@ class MarketOutput(StrictModel):        # extra="forbid"
 
 ### 2. 数字交给脚本，模型只做解读
 
-`unit_economics` 的反解公式写在代码里，面试可以当场手推：
+`unit_economics` 的反解公式写在代码里，可以手算复现：
 
 ```text
 net = P·(1 − commission − payment − ad_rate − coupon) − (cogs + freight)
@@ -211,26 +233,29 @@ net = P·(1 − commission − payment − ad_rate − coupon) − (cogs + freig
 ### 5. 可观测与评测是"能改"的前提
 
 - 每次 LLM / 工具 / 护栏调用都落 `TraceSpan`，带 token、成本、延迟；
+- 结构化日志（`text` / `json`）带 `request_id`，响应头 `X-Request-ID` 与日志可对齐；
 - 运行级指标：步骤数、checks 通过率、护栏分布、wall time；
 - golden eval 10 条，其中 2 条是**负向用例**：缺竞品数据、费率不可达时必须失败。
-  改 Prompt / 换模型先跑评测，通过率掉了就不许上线。
+  改 Prompt / 换模型先跑评测，通过率掉了就不合并。
+
+更多取舍与"为什么不用 LangGraph""怎么防死循环"等问题见 [设计问答](docs/DESIGN_FAQ.md)。
 
 ---
 
-## 快速验证（面试可当场跑）
+## 配置
 
-```bash
-# 1) 全量测试
-python -m pytest tests -q
-# 57 passed
+全部通过环境变量注入，完整清单见 [`.env.example`](.env.example) 与 [运维手册](docs/OPERATIONS.md)。
 
-# 2) 回归评测（含负向用例）
-python -m app.eval.runner
-# 10/10，score 1.0
-
-# 3) 端到端演示（创建 → 跑流水线 → 审批 → 闭环 → 复测）
-python scripts/demo.py
-```
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `LLM_PROVIDER` | `mock` | `mock`（离线）/ `openai_compatible`（真实模型） |
+| `LLM_BASE_URL` `LLM_MODEL` `LLM_API_KEY` | — | OpenAI 兼容网关接入参数 |
+| `DATABASE_URL` | `sqlite:///./data/studio.db` | 换 PostgreSQL 只改这一行 |
+| `HUMAN_APPROVAL` | `true` | 素材发布前是否必须人工审批 |
+| `MAX_TOOL_STEPS` / `MAX_ATTEMPTS` | `4` / `2` | 工具轮次与输出重试上限 |
+| `CORS_ORIGINS` | `*` | 生产填具体域名 |
+| `LOG_LEVEL` / `LOG_FORMAT` | `INFO` / `text` | `json` 用于日志采集 |
+| `DOCS_ENABLED` | `true` | 生产建议关闭 `/docs` |
 
 ---
 
@@ -239,8 +264,9 @@ python scripts/demo.py
 完整接口见 [`docs/API.md`](docs/API.md)，`examples/` 下是可直接执行的 JSON / `.http`。
 
 ```bash
-# 健康检查 + Agent 目录
+# 探针与能力目录
 curl http://127.0.0.1:8000/api/health
+curl http://127.0.0.1:8000/api/ready
 curl http://127.0.0.1:8000/api/meta/catalog
 
 # 跑完整流水线（异步，返回 run_id 轮询）
@@ -259,17 +285,19 @@ curl -X POST http://127.0.0.1:8000/api/runs/{run_id}/approve
 curl -X POST http://127.0.0.1:8000/api/agents/03_listing_creative/preview \
   -H "Content-Type: application/json" -d @examples/listing_preview.json
 
-# 直接调确定性工具（面试时最容易被追问的口径，当场复算）
+# 直接调确定性工具（口径可复算）
 curl -X POST http://127.0.0.1:8000/api/tools/unit_economics/invoke \
   -H "Content-Type: application/json" -d @examples/tool_unit_economics.json
 ```
 
+所有错误响应统一为 `{"detail": ..., "request_id": ...}`，排查时按 `request_id` 检索日志。
+
 ---
 
-## 切换到真实模型
+## 接入真实模型
 
 默认 `mock` provider 是**规则型 Agent**：数值来自真实工具、文案来自商品知识库，
-用于无 key 演示与回归基线。接真实模型只改环境变量：
+用于无 key 运行与回归基线。接真实模型只改环境变量：
 
 ```bash
 LLM_PROVIDER=openai_compatible
@@ -281,15 +309,20 @@ LLM_MODEL=deepseek-chat
 `app/llm/openai_compat.py` 是标准的 `/chat/completions` 实现，DeepSeek / Qwen / vLLM /
 Ollama / 任何中转网关都能接。**换模型不动业务代码**，因为所有 Agent 只依赖 `chat()` 一个方法。
 
+配置写错时不会静默降级：`/api/health` 会返回 `provider_error` 说明原因。
+
 ---
 
 ## 目录结构
 
 ```text
-CrossBorderOps-Agent-Platform/
+E-_commerce_Agent/
 ├── app/
-│   ├── main.py                  # 应用装配、启动自检、崩溃恢复
+│   ├── main.py                  # 应用装配、中间件、启动自检、崩溃恢复
 │   ├── config.py                # 环境变量配置
+│   ├── logging.py               # 结构化日志 + request_id 注入
+│   ├── middleware.py            # 请求关联 ID、访问日志、安全响应头
+│   ├── errors.py                # 统一错误响应
 │   ├── db.py / models.py        # SQLAlchemy 模型（Run/StepRun/Artifact/TraceSpan/FeedbackEvent）
 │   ├── api/                     # REST 路由 + 请求模型
 │   ├── agents/
@@ -298,33 +331,73 @@ CrossBorderOps-Agent-Platform/
 │   │   ├── registry.py          # 输入适配 + 证据工具 + 工具白名单
 │   │   ├── runtime.py           # 契约→证据→工具循环→校验→护栏
 │   │   └── gates.py             # 三级护栏
-│   ├── tools/                   # 13 个确定性工具（market/pricing/listing/image/video/ads/review）
+│   ├── tools/                   # 13 个确定性工具
 │   ├── llm/                     # Provider 抽象、mock、OpenAI 兼容、商品知识库
 │   ├── workflow/engine.py       # 状态机、并行创意簇、审批、闭环、版本化
 │   ├── eval/runner.py           # golden 评测（含负向用例）
-│   └── seed.py                  # 两个演示项目（含广告/评论/复测数据）
+│   └── seed.py                  # 两个示例项目（含广告/评论/复测数据）
 ├── web/                         # 零依赖单页控制台
-├── tests/                       # 57 个测试
+├── tests/                       # 66 个测试
 ├── examples/                    # 可直接执行的请求示例
-├── scripts/demo.py              # 端到端演示脚本
-└── docs/                        # 架构、API、面试讲解
+├── scripts/                     # demo.py / smoke_http.py / run.ps1
+├── docs/                        # 架构、API、设计问答、运维手册
+├── Dockerfile                   # 多阶段构建，非 root 运行
+├── docker-compose.yml
+└── Makefile                     # install / run / test / lint / demo / docker-*
 ```
 
 ---
 
-## 与参考项目的差异（面试如实说）
+## 部署与运维
 
-参考项目是**方法论 + Prompt 工具箱**，交付物是文档，价值在"经验结构化"。
-本项目保留它的 7 Agent 拆分、确定性计算优先、合规红线与闭环思想，
-把交付物换成**可运行系统**：
+```bash
+make install-dev     # 安装开发依赖
+make test            # 测试 + 覆盖率
+make lint            # ruff 静态检查
+make eval            # golden 评测
+make smoke           # 对已启动的服务做端到端冒烟
+make docker-build    # 构建镜像
+```
 
-- 新增：Agent 运行时、双契约、13 个工具、三级护栏、状态机、版本化闭环、trace、评测；
-- 保留：全部业务口径（CR4/HHI、盈亏线、九图分工、八类归因、P0/P1/P2）；
-- 明确不做：真实平台 API 对接、真实出图/出视频、真实爬虫 —— 这些是 `examples` 级的适配位，
-  不是本项目的重点。
+- **探针**：`/api/health`（存活，不查库）、`/api/ready`（就绪，查库与注册表）；
+- **日志**：`LOG_FORMAT=json` 接采集平台，按 `request_id` 关联一次请求；
+- **备份**：`sqlite3 data/studio.db ".backup ..."`，恢复步骤见运维手册；
+- **扩容**：单机走线程池，多机需要换 PostgreSQL + 任务队列；内置接口不带鉴权，对外必须置于网关之后。
 
-**已知边界**：mock provider 的文案来自知识库模板，用于保证离线可复现；
-真实模型下文案质量取决于模型，但契约、护栏、评测、闭环链路完全一致。
+完整部署形态、故障排查表与上线检查清单见 [运维手册](docs/OPERATIONS.md)，
+安全边界与漏洞报告流程见 [SECURITY.md](SECURITY.md)。
+
+---
+
+## 测试与评测
+
+```bash
+# 1) 全量测试
+python -m pytest -q
+# 66 passed
+
+# 2) 回归评测（含负向用例）
+python -m app.eval.runner
+# 10/10，score 1.0
+
+# 3) 端到端演示（创建 → 跑流水线 → 审批 → 闭环 → 复测）
+python scripts/demo.py
+```
+
+本机实测（mock provider）：全链路约 0.1–0.2 s、31 项自检全过、单次约 14.6k token / $0.0066。
+数字随机器与依赖版本波动，可直接用 `python scripts/demo.py` 复现。
+
+CI 在 push / PR 时跑 ruff + pytest（3.11 / 3.13）+ golden 评测 + HTTP 冒烟，见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
+
+---
+
+## 已知边界
+
+- `mock` provider 的文案来自知识库模板，用于保证离线可复现；真实模型下文案质量取决于模型，
+  但契约、护栏、评测、闭环链路完全一致；
+- 不做真实平台 API 对接、真实出图/出视频 —— 只留适配位（见 Roadmap）；
+- 内置接口不带鉴权，多租户与权限仍在 Roadmap；
+- SQLite 为单写者，高并发写入需换 PostgreSQL。
 
 ---
 
@@ -332,22 +405,29 @@ CrossBorderOps-Agent-Platform/
 
 | 版本 | 内容 |
 |---|---|
-| v0.6（当前） | 7 Agent 全链路 + 闭环复测 + 审批闸门 + 评测门禁 + Web 控制台 |
-| v0.7 | 平台 API 适配器（Shopee / Mercado Livre 拉数与回写） |
-| v0.8 | 向量记忆：跨项目复用"某个类目的历史诊断" |
-| v0.9 | 批量任务与定时调度（每日自动诊断 → 只把 P0 推到人） |
-| v1.0 | 多租户 + 权限 + PostgreSQL + 对象存储 |
+| v0.7（当前） | 生产化加固：结构化日志与 request_id、统一错误契约、就绪探针、容器化、安全与运维文档 |
+| v0.8 | 平台 API 适配器（Shopee / Mercado Livre 拉数与回写） |
+| v0.9 | 向量记忆：跨项目复用"某个类目的历史诊断" |
+| v1.0 | 批量任务与定时调度（每日自动诊断 → 只把 P0 推到人） |
+| v1.1 | 多租户 + 权限 + PostgreSQL + 对象存储 |
+
+变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
 ## 文档
 
-- [架构与设计决策](docs/ARCHITECTURE.md) —— 分层、状态机、契约、护栏、闭环、取舍
-- [API 参考](docs/API.md) —— 全部端点与示例
-- [面试讲解稿](docs/INTERVIEW.md) —— 90 秒版本、5 分钟版本、20 个追问与回答
-- [演示脚本](scripts/demo.py) —— 一条命令跑完整个故事
-- [贡献指南](CONTRIBUTING.md) —— 本地开发、提 PR 前必过的检查、如何新增 Agent
+- [架构与设计决策](docs/ARCHITECTURE.md) —— 分层、状态机、契约、护栏、闭环、可观测、安全边界
+- [设计问答](docs/DESIGN_FAQ.md) —— 为什么这么设计、每个取舍的代价
+- [API 参考](docs/API.md) —— 全部端点、错误契约与示例
+- [运维手册](docs/OPERATIONS.md) —— 部署形态、探针、日志排障、备份、扩容、上线清单
+- [安全策略](SECURITY.md) —— 安全边界与漏洞报告流程
+- [贡献指南](CONTRIBUTING.md) —— 本地开发、PR 前必过的检查、如何新增 Agent
 
-CI 会在 push / PR 时跑 `pytest` + golden 评测 + HTTP 冒烟（见 `.github/workflows/ci.yml`）。
+---
 
-MIT License.
+## 致谢与许可
+
+- 方法论与业务口径参考 [AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)；
+- 示例数据为脱敏样本，不含真实店铺、账号与买家信息；
+- MIT License，见 [LICENSE](LICENSE)。

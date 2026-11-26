@@ -1,22 +1,31 @@
 # API 参考
 
-Base URL：`http://127.0.0.1:8000`　交互式文档：`/docs`（Swagger UI）
+Base URL：`http://127.0.0.1:8000`　交互式文档：`/docs`（Swagger UI，`DOCS_ENABLED=false` 时关闭）
 
 ## 约定
 
 - 所有接口前缀 `/api`，请求/响应均为 JSON。
 - **运行是异步的**：`POST .../runs` 返回 `202 + run_id`，客户端轮询 `GET /api/runs/{id}`，
   直到 `status ∈ {completed, failed, awaiting_approval, cancelled}`。
-- 错误语义：
+- **请求关联 ID**：每个响应都带 `X-Request-ID`（可用同名请求头透传上游值，最长 128 字符）；
+  同一条 ID 会出现在服务端所有相关日志里。
+- **统一错误体**：
+
+```json
+{"detail": "运行不存在", "request_id": "9f2c1a7b3d10"}
+```
+
+  `detail` 可能是字符串，也可能是结构化对象（字段级校验原因、工具参数错误）。报障时请提供 `request_id`。
 
 | 状态码 | 含义 | 例子 |
 |---|---|---|
 | 400 | 请求体不合法 | JSON 结构错误 |
 | 404 | 资源不存在 | 未知 project / run / artifact |
 | 409 | 状态冲突 | 对非 `awaiting_approval` 的运行调用 approve |
-| 422 | **契约校验失败** | 竞品数据 < 3 条、广告数据为空、工具参数多传字段 |
+| 422 | **契约校验失败** | 竞品数据 < 3 条、广告数据为空、工具参数多传字段、请求体缺必填字段 |
+| 503 | 依赖不可用 | `/api/ready` 探测数据库或注册表失败 |
 
-- 所有时间字段为 UTC ISO8601（带 `Z`）。
+- 所有时间字段为 UTC ISO8601（`Z` 结尾）。
 
 ---
 
@@ -24,7 +33,9 @@ Base URL：`http://127.0.0.1:8000`　交互式文档：`/docs`（Swagger UI）
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/health` | 健康检查、当前 provider / model |
+| GET | `/api` | 服务标识与文档入口 |
+| GET | `/api/health` | 存活探针：版本、生效 provider / model、环境 |
+| GET | `/api/ready` | 就绪探针：数据库、工具、Agent、契约注册表（失败返回 503） |
 | GET | `/api/meta/catalog` | 7 个 Agent、工具清单、流水线定义 |
 | GET | `/api/contracts/{agent_id}` | 输入/输出 JSON Schema |
 | POST | `/api/projects` | 新建项目（商品事实 + 成本 + 竞品数据） |
@@ -48,7 +59,49 @@ Base URL：`http://127.0.0.1:8000`　交互式文档：`/docs`（Swagger UI）
 | POST | `/api/eval/run?suite=golden` | 跑回归评测 |
 | GET | `/api/eval/runs` | 评测历史 |
 | GET | `/api/metrics/overview` | 平台级指标（成功率、token、成本、护栏分布） |
-| GET | `/api/demo/curl` | 返回可直接复制的 curl 命令 |
+| GET | `/api/demo/curl` | 按当前部署地址生成可复制的 curl 命令 |
+
+---
+
+## 0. 探针
+
+```http
+GET /api/health
+```
+
+```json
+{
+  "status": "ok",
+  "version": "0.7.0",
+  "environment": "production",
+  "provider": "mock",
+  "model": "mock-rule-agent-v1",
+  "human_approval": true,
+  "database": "sqlite",
+  "docs_enabled": false,
+  "uptime_s": 1284.5
+}
+```
+
+配置写错（例如指向真实模型但没给 `LLM_API_KEY`）时仍返回 `200`，但附带：
+
+```json
+{"provider_error": "LLM_PROVIDER 指向真实模型但未配置 LLM_API_KEY；离线运行请用 LLM_PROVIDER=mock"}
+```
+
+```http
+GET /api/ready
+```
+
+```json
+{
+  "status": "ready",
+  "checks": {"database": true, "tools": true, "agents": true, "contracts": true},
+  "version": "0.7.0"
+}
+```
+
+任一检查失败返回 `503` + `{"status": "degraded", "checks": {...}}`。
 
 ---
 
@@ -229,8 +282,14 @@ Content-Type: application/json
 契约不满足时返回 `422`：
 
 ```json
-{"detail": {"agent_id": "01_market_research", "stage": "input_contract",
-            "message": "输入契约校验失败: competitor_rows: List should have at least 3 items"}}
+{
+  "detail": {
+    "agent_id": "01_market_research",
+    "stage": "input_contract",
+    "message": "输入契约校验失败: competitor_rows: List should have at least 3 items"
+  },
+  "request_id": "9f2c1a7b3d10"
+}
 ```
 
 ---
@@ -268,7 +327,25 @@ Content-Type: application/json
 参数多传字段 → `422`：
 
 ```json
-{"detail": {"tool": "unit_economics", "message": "参数校验失败: made_up_field: Extra inputs are not permitted"}}
+{
+  "detail": {"tool": "unit_economics", "message": "参数校验失败: made_up_field: Extra inputs are not permitted"},
+  "request_id": "9f2c1a7b3d10"
+}
+```
+
+请求体本身不合法（缺必填字段 / 多传字段）也会返回结构化 `422`：
+
+```json
+{
+  "detail": {
+    "message": "请求参数校验失败",
+    "errors": [
+      {"loc": ["body", "name"], "msg": "Field required", "type": "missing"},
+      {"loc": ["body", "nope"], "msg": "Extra inputs are not permitted", "type": "extra_forbidden"}
+    ]
+  },
+  "request_id": "9f2c1a7b3d10"
+}
 ```
 
 ---
