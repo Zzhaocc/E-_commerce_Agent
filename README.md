@@ -15,20 +15,19 @@
 
 ## 这是什么
 
-参考项目 [AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)
-把跨境运营 SOP 拆成了 7 个 Agent 的 **Prompt + 模板 + 案例**。
+CrossBorderOps 是服务端的跨境电商运营 Agent 平台：输入一个商品项目（商品事实、成本结构、竞品导出、
+广告与评论数据），输出一套可直接交付的素材包。
 
-本项目做的是它的**工程化落地**：把那套方法论变成一个真正能跑的系统 ——
+平台由 7 个 Agent 串联：市场分析 → 产品策略 → Listing / 主图 / 短视频 → 广告与评论诊断，
+每一步都跑在同一个运行时上 ——
 
-| 参考项目给了 | 本项目补齐了 |
-|---|---|
-| 7 个 Agent 的系统 Prompt | 带输入/输出契约的 Agent 运行时（JSON Schema 校验 + 失败重试） |
-| "能算的别让模型猜" 的原则 | 13 个确定性工具（CR4/HHI/价格带波谷/净利率/字符校验/像素校验/时序校验） |
-| 合规红线清单 | 可执行的三级护栏（repair / block / warn），命中即阻塞发布 |
-| 闭环工作流的图 | 真正落地的回流：诊断 → 生成 FeedbackEvent → 素材 v2 → 用第二窗口数据复测 |
-| 手工自检清单 | 66 个自动化测试 + 10 条 golden eval（含"必须失败"的负向用例） |
+- **7 个 Agent**：职责与产物固定，输入输出都有 JSON Schema 契约；
+- **13 个确定性工具**：CR4、HHI、价格带波谷、盈亏价、券余量、字符 / 像素 / 时序校验全部由脚本算，
+  模型只做解读；
+- **三级护栏**：能自动修的修（repair），该拦的拦（block），存疑的只告警（warn）；
+- **版本化闭环**：广告与评论诊断生成可追溯的 FeedbackEvent，驱动素材出新版本，再用第二窗口数据复测。
 
-**一句话**：它回答的是"当一个 Agent 要上生产，除了 Prompt 还差什么"。
+默认开箱即用：不需要 API key，内置规则型模型提供方；接真实模型只改环境变量。
 
 ---
 
@@ -428,6 +427,6 @@ CI 在 push / PR 时跑 ruff + pytest（3.11 / 3.13）+ golden 评测 + HTTP 冒
 
 ## 致谢与许可
 
-- 方法论与业务口径参考 [AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)；
+- 致谢 [AI-Cross-Border-Ecommerce-Agent-Toolkit](https://github.com/heqiangdiao-wq/AI-Cross-Border-Ecommerce-Agent-Toolkit)：7 个 Agent 的职责划分与业务口径来源；
 - 示例数据为脱敏样本，不含真实店铺、账号与买家信息；
 - MIT License，见 [LICENSE](LICENSE)。
